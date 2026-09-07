@@ -1,0 +1,50 @@
+E:/electronic-circuit/rtl/top_blink.v {1 {vlog -work work -stats=none E:/electronic-circuit/rtl/top_blink.v
+Model Technology ModelSim ALTERA vlog 10.3c Compiler 2014.09 Sep 20 2014
+-- Compiling module top_blink
+
+Top level modules:
+	top_blink
+
+} {} {}} E:/electronic-circuit/sim/tb_clock_enable.v {1 {vlog -work work -stats=none E:/electronic-circuit/sim/tb_clock_enable.v
+Model Technology ModelSim ALTERA vlog 10.3c Compiler 2014.09 Sep 20 2014
+-- Compiling module tb_clock_enable
+
+Top level modules:
+	tb_clock_enable
+
+} {} {}} E:/electronic-circuit/rtl/clock_enable.v {1 {vlog -work work -stats=none E:/electronic-circuit/rtl/clock_enable.v
+Model Technology ModelSim ALTERA vlog 10.3c Compiler 2014.09 Sep 20 2014
+-- Compiling module clock_enable
+
+Top level modules:
+	clock_enable
+
+} {} {}} E:/electronic-circuit/sim/tb_seven_seg.v {1 {vlog -work work -stats=none E:/electronic-circuit/sim/tb_seven_seg.v
+Model Technology ModelSim ALTERA vlog 10.3c Compiler 2014.09 Sep 20 2014
+-- Compiling module tb_seven_seg
+
+Top level modules:
+	tb_seven_seg
+
+} {} {}} E:/electronic-circuit/rtl/seven_seg.v {1 {vlog -work work -stats=none E:/electronic-circuit/rtl/seven_seg.v
+Model Technology ModelSim ALTERA vlog 10.3c Compiler 2014.09 Sep 20 2014
+-- Compiling module seven_seg
+
+Top level modules:
+	seven_seg
+
+} {} {}} E:/electronic-circuit/sim/tb_led_ctrl.v {1 {vlog -work work -stats=none E:/electronic-circuit/sim/tb_led_ctrl.v
+Model Technology ModelSim ALTERA vlog 10.3c Compiler 2014.09 Sep 20 2014
+-- Compiling module tb_led_ctrl
+
+Top level modules:
+	tb_led_ctrl
+
+} {} {}} E:/electronic-circuit/rtl/led_ctrl.v {1 {vlog -work work -stats=none E:/electronic-circuit/rtl/led_ctrl.v
+Model Technology ModelSim ALTERA vlog 10.3c Compiler 2014.09 Sep 20 2014
+-- Compiling module led_ctrl
+
+Top level modules:
+	led_ctrl
+
+} {} {}}
