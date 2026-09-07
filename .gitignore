@@ -1,0 +1,27 @@
+# ---- TangDynasty / FPGA 工程生成物（可再生，不入库）----
+TD_EG4_*/
+EG4S20/
+_extract_basic/
+*_Runs/
+*.al
+*.bit
+*.db
+*.area
+*.rpt
+*.tsm
+*.log
+
+# ---- ModelSim ----
+sim/work/
+sim/transcript
+*.wlf
+*.vstf
+
+# ---- 隐私 / 本地 ----
+.claude/
+transcript/
+
+# ---- Python ----
+__pycache__/
+*.pyc
+.venv/
