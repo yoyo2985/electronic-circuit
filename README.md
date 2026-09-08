@@ -1,8 +1,10 @@
 # 基于 FPGA 的虚拟机器人实时感知、决策与闭环运动控制系统（EG4S20）
 
-真实 FPGA 控制器（安路 EG4S20BG256 开发板）+ 虚拟物理对象（虚拟电机/编码器）+ PC 数字孪生的闭环控制验证平台。采用“感知 → 决策 → 执行”闭环控制思想，构建机器人数字孪生与实时闭环控制验证平台（不含实体电机/摄像头/机械结构，不使用 SDRAM/ES8388/ADC）。
+真实 FPGA 控制器（安路 EG4S20BG256 开发板）+ 虚拟物理对象（虚拟电机/编码器）+ PC 数字孪生的闭环控制验证平台。采用“感知 → 决策 → 执行”闭环控制思想，构建机器人数字孪生与实时闭环控制验证平台。
 
-Verilog HDL / TangDynasty(TD) / ModelSim。
+**当前方向（V2，2026-09）**：在 V1 闭环运动基础上扩展 **ES8388 语音感知链**：双声道 PCM → VAD → 13-D MFCC 特征引擎(feature_engine) → 轻量声纹匹配(vtmpl/speaker_verify/utter_vote) → decision_fsm → 差分轮速，目标“主人声控的虚拟机器人”。ES8388 I2C 地址实测 **0x11**（官方例程 0x10 配不上）。硬件数字链路(48k I2S)已通；**mic 模拟前端待修**（见下“诚实状态”）。
+
+Verilog HDL / TangDynasty(TD) / ModelSim / Python(PyAV+NumPy, 仅 Golden/工具/离线，不作实时替代)。
 
 ## 系统架构
 
@@ -36,17 +38,21 @@ EG4S20 FPGA
 | 15 | `uart_telemetry` | ✅ | 整机内 | 遥测帧 `[AA][state][target][pos][chk]` |
 | 16 | `tools/pc_twin.py` | – | 脚本 | PC 端数字孪生：实时打印/曲线 |
 | 17 | DAC（加分） | – | – | 未实现（R-2R 复用 LED 脚，可选） |
-| 18 | ES8388（加分） | – | – | 未实现（依赖音频外设） |
+| 18 | ES8388 语音感知 | 见上 V2 章节 | 数字通/mic 待修 | 不再“未实现”，见 V2 语音感知链 |
 
 > 注：板上自动堵转检测在低速/整数位粒度下易误判，整机 `top_system` 演示中关闭自动堵转（模块已单测），故障演示通过 SW2 手动触发，报告可如实说明。
 
 ## 目录
 
-- `rtl/`    源码（每个模块一个文件）
-- `sim/`    各模块 testbench（ModelSim）
-- `constr/` 引脚约束 `.adc`（抄自板卡官方例程，不臆造）
-- `doc/`    设计规范 / 架构 / 接口 / 仿真指南 / 阶段说明（`final_guide.md`）
-- `tools/`  PC 数字孪生上位机脚本
+- `rtl/`    源码（V1 运动 + V2 语音：audio_pcm_bridge/feature_engine/speaker_verify/utter_vote/decision_fsm/motion_plan 等）
+- `rtl/audio/`  ES8388 官方配置链 + PLL 封装
+- `sim/`    testbench（ModelSim）；`sim/audio_sim/` 语音 TB + 向量(data/)
+- `constr/` 引脚约束 `.adc`（取自板卡官方例程，不臆造）
+- `doc/`    设计规范/架构/接口/仿真指南 + B4/B5 规格
+- `py/`     Python Golden：frontend/audio_golden(向量化)/gen_* 参考
+- `tools/`  V1 数字孪生脚本 + V2 声纹工具链(audit/preprocess/build_template/evaluate) + audio_monitor
+- `data/`   speaker 模板/划分（真实语音与派生特征不入库）
+- `reports/speaker_verification/` 声纹基线报告/CSV/审计
 - `web/`    浏览器数字孪生控制台（Web Serial，见下）
 
 ## 快速开始（仿真）
@@ -107,6 +113,35 @@ python -m http.server 8000     # 浏览器打开 http://localhost:8000（需 Chr
 
 > Web Serial 仅支持 Chrome/Edge 且要求 localhost 或 HTTPS；Live 连接前 FPGA 需已在发遥测。
 > 详细使用说明 / 遥测协议 / 常见问题见 **`web/README.md`**。
+
+## V2 语音感知 / 声纹认证链（2026-09，独立于 V1 持续开发）
+
+```
+ES8388 → I2S(PCM 24bit L/R) → VAD → feature_engine(13-D MFCC)
+   → mfcc_quant(16bit) → vtmpl/speaker_verify → utter_vote(owner_valid)
+   → decision_fsm → motion_plan(VL/VR) →(V1 虚拟电机/数字孪生)
+```
+
+| 阶段 | 交付 | 验证 |
+|---|---|---|
+| A1 采集 | `audio_pcm_bridge`(I2S 成帧跨时钟)、energy、status(`Pxxxx Lxxxx Rxxxx Vx`)、top_audio | ModelSim PASS；板上数字链路通(P≈24038) |
+| B1/B0 | VAD 接入顶层；`py/frontend.py` Golden | PASS |
+| B3 | pre_emph→front_wind(Q15Hann)→fft_core(N=64)→mel_bank→log2/logmel→dct2_mfcc | 各积木逐位/容差 PASS |
+| B4 | `feature_engine`（N64/M20/K13/hop64，含 Power 级） | 全0/1kHz/随机 39 特征逐位 PASS |
+| B5.2 | `mfcc_quant` 32→16（QS+饱和） | 极值 PASS |
+| B5.3 | `speaker_verify`（feature→vtmpl DIM13） | 端到端 3 帧 PASS |
+| B5.4-6 | 真实 m4a 工具链(`tools/audit|speaker_preprocess|build_speaker_template|evaluate`) + owner_template.mem | 见“诚实状态” |
+| B5.7 | `utter_vote` 片段多数投票 | 7 极端场景 PASS |
+| E1/E2 | `decision_fsm`/`motion_plan`/`ctl_chain` | 合成 PASS |
+
+**统一定点参数**：帧/FFT=64、hop=64、power bins=33、mel=20、MFCC=13、PCM=24bit signed、48k、默认 L 声道(R 保留给方向)。Python Golden 与 RTL 用整数镜像逐位一致（`py/audio_golden.py` 与标量/引擎 diff=0）。
+
+### 诚实状态
+- ES8388 数字链路正常(48k I2S、I2C 地址 0x11)；**mic 模拟前端无有效输入**（已试输入选择 0x00/0x50/差分+PGA24dB 等，待修/待原理图）。
+- **B5.4-6 结论**：MFCC13+L1+mean 基线在内容高度相似的真实 m4a 上 **owner/impostor 帧级与录音级均不可分**（如实，不推荐上线、不用拍脑袋阈值）；`TH=5000` 仅占位。待 B5.7 投票(已完成结构) + 更稳前端/受控录制后再评估。
+- 原始语音 `sounds/` 与派生 `data/speaker_features/` 已 gitignore（隐私/体积）。
+
+
 
 ## 设计规范要点（详见 `doc/design_rules.md`）
 
