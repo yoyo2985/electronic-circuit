@@ -143,6 +143,20 @@ ES8388 → I2S(PCM 24bit L/R) → VAD → feature_engine(13-D MFCC)
 
 
 
+## PC 端声纹算法评估（CAM++ vs MFCC 基线）
+
+- **导出模型**（ModelScope CAMPPlus → ONNX，动态帧轴）：
+  `python tools/export_campplus_onnx.py` → `py/campplus/models/campplus_emb.onnx`（已 gitignore，模型不入库）。
+  推理接口见 `py/campplus/interface.py`（`extract_embedding`/`verify_speaker`，192-D/L2/余弦）。
+- **A/B 对比**（全量 owner15 + impostor24；A=MFCC13+L1 录音级、B=CAM++ 余弦，模板=全 owner 均值）：
+  `python tools/benchmark_ab.py` → `reports/{comparison_campplus_vs_mfcc.csv, roc_comparison.png, det_comparison.png, comparison_summary.txt}`
+- **软件在环（无硬件）**：
+  `python tools/sil_audio_controller.py --audio <命令m4a> --embedder mfcc|campplus`
+- 当前结果（2026-09-08，注意乐观性：模板含被评身份 + 每说话人仅 15/24 条录音）：
+  A(MFCC 录音级) EER≈0.000（乐观）、B(CAM++) EER≈0.017、B owner cos 0.90–0.99 vs impostor 0.78–0.94，**CAM++ 区分明显优于帧级 MFCC 基线**。
+
+
+
 ## 设计规范要点（详见 `doc/design_rules.md`）
 
 - 单一 50MHz 主时钟 + clock enable；禁止用寄存器生成分频时钟。

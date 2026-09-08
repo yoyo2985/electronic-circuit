@@ -33,3 +33,6 @@ data/speaker_features/
 
 # 参考克隆(基座, 不入库)
 recognition/
+
+# CAM++ onnx 模型(大, 不入库)
+py/campplus/models/*.onnx
