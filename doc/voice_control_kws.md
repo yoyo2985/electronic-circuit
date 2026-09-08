@@ -65,3 +65,10 @@ cmd_vote #(.VOTE_N(8),.NUM(4)) u_cmdv (
 - 场景B 陌生人+left → 不执行（o_cmd_valid 恒0） PASS
 - 场景C owner+stop → STOP/0,0 PASS
 注：TB 从 feature_engine 的 MFCC 输出层注入（等价共享 feature 流）；owner 由 utter_vote 上层给出，TB 用 reg 模拟。
+
+## 9. 集成顶层 `rtl/top_voice_system.v`（综合目标）
+feature_engine → {speaker_verify→utter_vote} + {cmd_matcher→cmd_vote} → decision_fsm(owner&&cmd)
+→ 目标(0/90/180)→ trajectory/pid/virtual_motor → `telemetry_voice([AA][owner,cmd,act][tgt][pos][chk])`。
+`TEST=1` 用 dbg_fe_valid/data + dbg_owner 注入(仿真)；`TEST=0` 真实模式需把 feature_engine 的 PCM
+接自 ES8388 采集桥(顶层占位，未含 PLL/配置链，板上综合前需接入并按板扩展 .adc)。仿真：
+`sim/tb_top_voice_system.v` 三场景 A(owner+left→target0)/B(陌生人→hold90)/C(owner+stop→90) PASS。

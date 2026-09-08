@@ -166,6 +166,7 @@ ES8388 → I2S(PCM 24bit L/R) → VAD → feature_engine(13-D MFCC)
 - 单测：`tb_cmd_matcher`、`tb_cmd_vote` 均与 Python 期望一致 PASS。
 - **双引擎决策演示**（真实命令模板 `sounds/owner_sound/commands/{stop,left,right,forward}`，VAD 生成 `data/commands/cmd_*.mem`）：
   `sim/tb_voice_control.v` — 场景 A(owner+left→LEFT/-50,+50)、B(陌生人→不执行)、C(owner+stop→STOP) 端到端 PASS。
+- **集成顶层** `rtl/top_voice_system.v`（TEST 注入/真实两模式）+ `telemetry_voice.v`；`sim/tb_top_voice_system.v` 三场景 PASS；综合前需接 ES8388 采集桥并扩展 .adc（红线内暂不落地）。
 
 
 
