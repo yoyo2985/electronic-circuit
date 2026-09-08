@@ -5,3 +5,10 @@ av            # m4a 解码
 soundfile     # wav/flac 读取
 onnxruntime   # CAM++ 推理（模型文件需另下载，见 py/campplus）
 # 可选: torchaudio / kaldi-native-fbank（更标准 fbank），matplotlib（绘图）
+# CAM++ 导出/评估（较重，按需）
+modelscope
+torch
+onnx
+onnxscript
+funasr
+scikit-learn   # ROC/AUC 绘图可选

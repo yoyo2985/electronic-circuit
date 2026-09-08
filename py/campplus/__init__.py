@@ -11,6 +11,7 @@ import os
 # 候选模型路径（供 ModelScope 下载的 campplus 通用 zh-cn 版）
 DEFAULT_SEARCH = [
     os.getenv("CAMPPUS_ONNX", ""),
+    os.path.join(os.path.dirname(__file__), "models", "campplus_emb.onnx"),
     "recognition/Speech-processing-and-recognition-based-on-Anlu-EG4S20/models/sv/campplus_emb.onnx",
     "models/sv/campplus_emb.onnx",
 ]
