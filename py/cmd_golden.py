@@ -69,9 +69,15 @@ def gen_test_frames(tpls, n_frames=32, dim=13, seed=1):
 
 
 def main():
-    tpls = gen_synthetic()
+    import argparse
+    ap=argparse.ArgumentParser()
+    ap.add_argument("--names", default="0 1 2 3", help="模板序(默认合成 cmd_0..3；真实: --names stop left right forward)")
+    a=ap.parse_args()
+    names=a.names.split()
+    tpls=[read_tpl_mem(os.path.join(DATA,"commands",f"cmd_{n}.mem")) for n in names]
     feats, ids = gen_test_frames(tpls)
     got = [frame_cmd_id(f, tpls)[0] for f in feats]
+    print("loaded templates:", [f"cmd_{n}.mem" for n in names])
     print("matcher exact vs gen:", got == list(ids))
     mv = majority_last(got, 8)
     print("sample vote tail:", mv[-5:])

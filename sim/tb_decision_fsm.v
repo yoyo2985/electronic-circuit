@@ -18,6 +18,7 @@ module tb_decision_fsm;
     decision_fsm DUT (
         .clk(clk), .rst_n(rst_n), .in_valid(in_valid),
         .in_vad(in_vad), .in_auth(in_auth), .in_dir(in_dir),
+        .i_owner_valid(1'b0), .i_cmd_decision_valid(1'b0), .i_cmd_id(2'd0),
         .action_valid(action_valid), .action(action)
     );
 

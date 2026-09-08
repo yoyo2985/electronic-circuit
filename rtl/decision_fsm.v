@@ -10,8 +10,14 @@ module decision_fsm (
     input  wire              in_vad,
     input  wire              in_auth,
     input  wire [1:0]        in_dir,
+    // Who(owner,utter_vote)+What(cmd_vote) 联合
+    input  wire              i_owner_valid,
+    input  wire              i_cmd_decision_valid,
+    input  wire [1:0]        i_cmd_id,
     output reg               action_valid,
-    output reg  [2:0]        action
+    output reg  [2:0]        action,
+    output reg               o_cmd_valid,     // owner&&cmd 有效
+    output reg  [2:0]        o_cmd_action     // 0 stop/2 fwd/3 left/4 right
 );
     reg auth_l;
 
@@ -20,9 +26,23 @@ module decision_fsm (
             auth_l       <= 1'b0;
             action_valid <= 1'b0;
             action       <= 3'd0;
+            o_cmd_valid  <= 1'b0;
+            o_cmd_action <= 3'd0;
         end else begin
             action_valid <= 1'b0;
+            o_cmd_valid  <= 1'b0;
             if (in_valid) begin
+                // Who+What: 主人 && 命令有效 → 执行命令动作（否则不执行）
+                if (i_owner_valid && i_cmd_decision_valid) begin
+                    case (i_cmd_id)
+                        2'd1: o_cmd_action <= 3'd3;   // left -> LEFT
+                        2'd2: o_cmd_action <= 3'd4;   // right -> RIGHT
+                        2'd3: o_cmd_action <= 3'd2;   // forward -> FORWARD
+                        default: o_cmd_action <= 3'd0; // 0 stop/其它 -> STOP(IDLE)
+                    endcase
+                    o_cmd_valid <= 1'b1;
+                end
+                // 以下保持原“帧内 auth/dir”逻辑（兼容旧用例）
                 if (!in_vad) begin
                     auth_l <= 1'b0;
                     action <= 3'd0;             // IDLE
