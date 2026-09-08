@@ -10,15 +10,16 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 import frontend as fe
 
-NB, M, QCF = 9, 6, 12
+NB, M, QCF = 33, 20, 12
+NFFT = 64
 FS = 48000.0
 
 
 def main():
-    fb = fe.mel_filterbank(M, 16, FS)              # [M, NB]
+    fb = fe.mel_filterbank(M, NFFT, FS)        # [M, NB=33]
     c = np.clip(np.round(fb * (1 << QCF)), 0, (1 << QCF) - 1).astype(np.int64)
-    # 确定性功率向量
-    powv = np.array([0, 100, 2000, 8000, 50, 4000, 9000, 300, 120], dtype=np.int64)
+    # 确定性功率向量（33 bins）
+    powv = (np.arange(NB, dtype=np.int64) * 1000) + ((np.arange(NB) % 7) * 131)
     mel = []
     for m in range(M):
         acc = int(np.dot(c[m], powv))

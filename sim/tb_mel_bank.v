@@ -6,7 +6,7 @@
 
 module tb_mel_bank;
 
-    localparam NB = 9, M = 6;
+    localparam NB = 33, M = 20;
 
     reg clk = 1'b0, rst_n = 1'b0;
     reg in_valid = 1'b0;
