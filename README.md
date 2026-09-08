@@ -154,15 +154,17 @@ ES8388 → I2S(PCM 24bit L/R) → VAD → feature_engine(13-D MFCC)
   - 输出 `reports/{comparison_campplus_vs_mfcc.csv, *_loo.csv, roc|det_comparison*.png, roc_loo_*.png, comparison_summary.txt}`
 - **软件在环（无硬件）**：
   `python tools/sil_audio_controller.py --audio <命令m4a> --embedder mfcc|campplus`
-- 当前结果（2026-09-08，注意乐观性：模板含被评身份 + 每说话人仅 15/24 条录音）：
-  A(MFCC 录音级) EER≈0.000（乐观）、B(CAM++) EER≈0.017、B owner cos 0.90–0.99 vs impostor 0.78–0.94，**CAM++ 区分明显优于帧级 MFCC 基线**。
+- 结果（2026-09-08，数据样本少、模板含被评身份时乐观，需谨慎）：
+  - full(模板=全 owner 均值): A(MFCC 录音级) EER≈0.000、B(CAM++) EER≈0.017
+  - **LOO**: A EER≈0.000、B EER≈0.000（更接近泛化，但样本/内容高度相似，仍需扩数据复核）
+  - 结论：CAM++ 区分明显优于帧级 MFCC 基线；B 结果来自 LOO/真实数据（详细见 `reports/comparison_summary.txt`）。
 
 
 
 ### KWS 命令识别（并行 What 链，Who+What）
 新增并行命令识别（不改 speaker/utter/feature_engine）：`feature_engine.MFCC → cmd_matcher(4×vtmpl L1) → cmd_vote(窗口众数) → cmd_id(0 stop/1 left/2 right/3 forward)`。决策= `owner_valid && cmd_valid → action(cmd_id)`，否则 IDLE。详见 `doc/voice_control_kws.md`。
-- 命令模板：`python tools/gen_command_templates.py`（需 `sounds/commands/<名>/*.{wav,m4a}`）；
-  无真实命令时仿真用合成模板：`python py/cmd_golden.py`（写 `data/commands/cmd_0..3.mem` 与仿真向量）。
+- 命令模板：`python tools/gen_command_templates.py`（真实：`sounds/owner_sound/commands/<名>/*.{wav,m4a}`；能量 VAD 25ms/10ms，阈值=0.05×峰值，只取语音帧；`--no_vad` 回退整段）→ `data/commands/cmd_<名>.mem`；
+  无真实命令时仿真可用合成：`python py/cmd_golden.py`（写 `data/commands/cmd_0..3.mem` 与向量）。
 - 单测：`tb_cmd_matcher`、`tb_cmd_vote` 均与 Python 期望一致 PASS。
 - **双引擎决策演示**（真实命令模板 `sounds/owner_sound/commands/{stop,left,right,forward}`，VAD 生成 `data/commands/cmd_*.mem`）：
   `sim/tb_voice_control.v` — 场景 A(owner+left→LEFT/-50,+50)、B(陌生人→不执行)、C(owner+stop→STOP) 端到端 PASS。
