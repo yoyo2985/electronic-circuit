@@ -51,5 +51,17 @@ cmd_vote #(.VOTE_N(8),.NUM(4)) u_cmdv (
   无真实命令时仿真用合成模板（`python py/cmd_golden.py` 生成 `data/commands/cmd_0..3.mem` 与 `data/cmd_*` 向量）。
 - RTL 单测：`tb_cmd_matcher`(每帧 id 与 python 一致)、`tb_cmd_vote`(窗口众数与 python 一致)。
 
-## 5. 红线遵守
-未修改 speaker/utter/feature_engine/vtmpl 逻辑；KWS 全部为新增文件；command 模板在 `data/commands/`（git 如需可再排除）。
+## 6. 真实命令模板（VAD 优化）
+- 命令录音 `sounds/owner_sound/commands/{stop,left,right,forward}/*.m4a`（每文件多次念词）。
+- `tools/gen_command_templates.py`：25ms/10ms RMS，阈值=0.05×峰值 → 只取语音帧 MFCC 均值 → `data/commands/cmd_<name>.mem`（实测语音帧占比：forward 39%, left 30%, right 24%, stop 42%）。
+- 自校验：每条命令(自身 VAD 均值) argmin 到自己模板（dist=0），跨命令最小 1067(right-left)。
+
+## 7. 双引擎顶层连接（Who 现成 + What 新增）
+顶层把 `feature_engine(feature_valid/index/data)` 扇出到 `speaker_verify`(→`utter_vote`) 与 `cmd_matcher`(→`cmd_vote`) 两个并行分支；决策 `voice_action`：`owner_valid && cmd_vote.decision_valid` → 按 cmd_id 映射动作(stop/left/right/forward→0/3/4/2) → `motion_plan(VL/VR)`；否则不执行。
+
+## 8. 端到端仿真（真实命令模板注入）
+`sim/tb_voice_control.v`：注入 left/stop 帧(MFCC 层)＋owner 控制：
+- 场景A owner+left → LEFT, VL=-50/VR=+50 PASS
+- 场景B 陌生人+left → 不执行（o_cmd_valid 恒0） PASS
+- 场景C owner+stop → STOP/0,0 PASS
+注：TB 从 feature_engine 的 MFCC 输出层注入（等价共享 feature 流）；owner 由 utter_vote 上层给出，TB 用 reg 模拟。

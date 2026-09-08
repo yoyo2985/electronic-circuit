@@ -164,6 +164,8 @@ ES8388 → I2S(PCM 24bit L/R) → VAD → feature_engine(13-D MFCC)
 - 命令模板：`python tools/gen_command_templates.py`（需 `sounds/commands/<名>/*.{wav,m4a}`）；
   无真实命令时仿真用合成模板：`python py/cmd_golden.py`（写 `data/commands/cmd_0..3.mem` 与仿真向量）。
 - 单测：`tb_cmd_matcher`、`tb_cmd_vote` 均与 Python 期望一致 PASS。
+- **双引擎决策演示**（真实命令模板 `sounds/owner_sound/commands/{stop,left,right,forward}`，VAD 生成 `data/commands/cmd_*.mem`）：
+  `sim/tb_voice_control.v` — 场景 A(owner+left→LEFT/-50,+50)、B(陌生人→不执行)、C(owner+stop→STOP) 端到端 PASS。
 
 
 
