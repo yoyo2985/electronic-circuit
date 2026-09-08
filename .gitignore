@@ -26,3 +26,7 @@ transcript/
 __pycache__/
 *.pyc
 .venv/
+
+# 真实语音/派生特征(隐私/大文件)
+sounds/
+data/speaker_features/
