@@ -1,0 +1,7 @@
+# V2 语音链 Python 依赖（Golden/工具/离线，非 FPGA 运行时）
+numpy
+pyserial
+av            # m4a 解码
+soundfile     # wav/flac 读取
+onnxruntime   # CAM++ 推理（模型文件需另下载，见 py/campplus）
+# 可选: torchaudio / kaldi-native-fbank（更标准 fbank），matplotlib（绘图）
