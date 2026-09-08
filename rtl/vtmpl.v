@@ -5,7 +5,8 @@
 //------------------------------------------------------------------------------
 module vtmpl #(
     parameter DIM = 4,
-    parameter TH  = 500
+    parameter TH  = 500,
+    parameter TPL = "data/vtmpl.mem"
 ) (
     input  wire             clk,
     input  wire             rst_n,
@@ -19,7 +20,7 @@ module vtmpl #(
     localparam [LOGD-1:0] DM1 = DIM - 1;
 
     reg signed [15:0] tpl[0:DIM-1];
-    initial $readmemh("data/vtmpl.mem", tpl);
+    initial $readmemh(TPL, tpl);
 
     reg [LOGD-1:0] cnt;
     reg signed [39:0] acc;
