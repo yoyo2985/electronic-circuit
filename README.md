@@ -47,6 +47,7 @@ EG4S20 FPGA
 - `constr/` 引脚约束 `.adc`（抄自板卡官方例程，不臆造）
 - `doc/`    设计规范 / 架构 / 接口 / 仿真指南 / 阶段说明（`final_guide.md`）
 - `tools/`  PC 数字孪生上位机脚本
+- `web/`    浏览器数字孪生控制台（Web Serial，见下）
 
 ## 快速开始（仿真）
 
@@ -80,6 +81,32 @@ vsim -c work.tb_xxx -do "run -all; quit -f"
 - 板上 USB1=JTAG 下载；USB2=CH340 → PC 出现 COM 口。
 - SSCOM/串口助手 115200,8,N,1 可收遥测帧（每 ~100ms 一帧 `AA …`）。
 - 数字孪生：`python tools/pc_twin.py COM7 [--plot]`（依赖 pyserial；画图需 matplotlib）。
+
+## 🖥️ Web 数字孪生控制台（web/）
+
+浏览器端的 **FPGA 机器人数字孪生 / 实时闭环监控平台**（原生 HTML/CSS/JS + Web Serial，无框架、无 npm 依赖）：
+
+```
+EG4S20 FPGA → UART 遥测帧 → Web Serial → 网页数字孪生
+（真实控制器）                       （虚拟机器人/状态机/曲线/故障）
+```
+
+- **Demo Mode**：无 FPGA 也能完整演示（运动模型与 RTL 同构：轨迹限速 → P 反馈 → 一阶虚拟电机），内置
+  `0→90 · 90→150 · 150→30 · 0→180` 四个实验与 RUN DEMO LOOP。
+- **Live FPGA Mode**：浏览器 Web Serial 直连板上 CH340 串口（COM 口 + 115200 8N1），实时接收
+  遥测帧 `[AA][state][target][pos][chk]`，驱动 SVG 机械臂（实心=实际，虚线圆环=目标）、状态机
+  （IDLE/READY/MOVE/HOLD/FAULT）、Target/Actual/Error/Velocity 滚动曲线、故障横幅与事件日志。
+- 通信超时（2 s 无帧）以**通信告警**单独提示，与机器人 FAULT 区分；Live 不伪造 FPGA 未发送的数据。
+
+本地运行：
+
+```bash
+cd web
+python -m http.server 8000     # 浏览器打开 http://localhost:8000（需 Chrome/Edge）
+```
+
+> Web Serial 仅支持 Chrome/Edge 且要求 localhost 或 HTTPS；Live 连接前 FPGA 需已在发遥测。
+> 详细使用说明 / 遥测协议 / 常见问题见 **`web/README.md`**。
 
 ## 设计规范要点（详见 `doc/design_rules.md`）
 

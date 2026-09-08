@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FPGA Robot Digital Twin · EG4S20</title>
+<link rel="stylesheet" href="style.css?v=3" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='7' fill='%2335d0ff'/%3E%3Ccircle cx='6.4' cy='6.4' r='1.4' fill='%230a0f14'/%3E%3Ccircle cx='9.6' cy='6.4' r='1.4' fill='%230a0f14'/%3E%3C/svg%3E" />
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" fill="none" stroke="#35d0ff" stroke-width="1.4"/>
+        <circle cx="9.4" cy="9.6" r="1.6" fill="#0a0f14" stroke="#35d0ff" stroke-width="0.6"/>
+        <circle cx="14.6" cy="9.6" r="1.6" fill="#0a0f14" stroke="#35d0ff" stroke-width="0.6"/>
+        <path d="M9 14.5 q3 2 6 0" fill="none" stroke="#35d0ff" stroke-width="1"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-title">FPGA ROBOT <span>DIGITAL TWIN</span></div>
+      <div class="brand-sub">EG4S20BG256 &nbsp;·&nbsp; 50 MHz &nbsp;·&nbsp; UART 115200 8N1</div>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <span id="modeBadge" class="mode-badge demo">DEMO</span>
+    <span id="linkBadge" class="link-badge">
+      <span id="linkDot" class="dot off"></span><span id="linkText">DISCONNECTED</span>
+    </span>
+    <button id="btnConnect" class="btn btn-primary">CONNECT FPGA</button>
+    <button id="btnDisconnect" class="btn btn-ghost" disabled>DISCONNECT</button>
+  </div>
+</header>
+
+<!-- ============ MAIN GRID ============ -->
+<main class="layout">
+
+  <!-- ------- LEFT : VIRTUAL ROBOT ------- -->
+  <section class="panel robot-panel">
+    <div class="panel-head">
+      <h2>VIRTUAL ROBOT</h2>
+      <div class="legend">
+        <span class="lg lg-act"><i class="sw"></i> ACTUAL</span>
+        <span class="lg lg-tgt"><i class="sw"></i> TARGET</span>
+      </div>
+    </div>
+
+    <div id="faultBanner" class="fault-banner hidden">
+      <div class="fb-title">&#9888;&#65039; FAULT DETECTED</div>
+      <div class="fb-sub">Robot entered safe-stop state · control output STOP</div>
+    </div>
+
+    <div class="twin-wrap">
+      <div id="robotCanvas"></div>
+      <div class="angle-note">Single revolute joint &nbsp;·&nbsp; 0&ndash;180&deg;</div>
+    </div>
+
+    <div class="readouts">
+      <div class="ro ro-target"><div class="ro-k">TARGET</div><div class="ro-v" id="valTarget">&mdash;</div><div class="ro-u">&deg;</div></div>
+      <div class="ro ro-actual"><div class="ro-k">ACTUAL</div><div class="ro-v" id="valActual">&mdash;</div><div class="ro-u">&deg;</div></div>
+      <div class="ro ro-error"><div class="ro-k">ERROR</div><div class="ro-v" id="valError">&mdash;</div><div class="ro-u">&deg;</div></div>
+      <div class="ro ro-vel"><div class="ro-k">VELOCITY</div><div class="ro-v" id="valVelocity">&mdash;</div><div class="ro-u" id="velUnit">deg/s</div></div>
+    </div>
+  </section>
+
+  <!-- ------- RIGHT : STATUS + LINK + CONTROL ------- -->
+  <div class="side-col">
+
+    <!-- SYSTEM STATUS -->
+    <section class="panel">
+      <div class="panel-head"><h2>SYSTEM STATUS</h2></div>
+
+      <div id="stateFlow" class="state-flow"><!-- built by JS --></div>
+
+      <div class="kv-grid">
+        <div class="kv"><span class="kv-k">FAULT</span><span class="kv-v" id="kvFault">NORMAL</span></div>
+        <div class="kv"><span class="kv-k">MOTION</span><span class="kv-v" id="kvMotion">&mdash;</span></div>
+      </div>
+    </section>
+
+    <!-- FPGA LINK -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>FPGA LINK</h2>
+        <span class="pkt" id="linkRate">&mdash;</span>
+      </div>
+
+      <div class="link-rows">
+        <div class="kv"><span class="kv-k">PORT</span><span class="kv-v" id="linkPort">&mdash;</span></div>
+        <div class="kv"><span class="kv-k">BAUD</span><span class="kv-v" id="linkBaud">115200</span></div>
+        <div class="kv"><span class="kv-k">LAST PACKET</span><span class="kv-v" id="linkLast">&mdash;</span></div>
+        <div class="kv"><span class="kv-k">RX PACKETS</span><span class="kv-v mono" id="linkPkts">0</span></div>
+        <div class="kv"><span class="kv-k">VALID / ERROR</span><span class="kv-v mono" id="linkValidErr">0 / 0</span></div>
+        <div class="kv"><span class="kv-k">PACKET RATE</span><span class="kv-v mono" id="linkHz">&mdash;</span></div>
+      </div>
+
+      <div class="frame-debug">
+        <div class="fd-title">LAST FRAMES · raw bytes (st / tgt / pos)</div>
+        <div id="frameLog" class="frame-log mono">&mdash;</div>
+      </div>
+
+      <div id="commWarn" class="comm-warn hidden">
+        &#9888;&#65039; TELEMETRY TIMEOUT &nbsp;·&nbsp; no data for 2 s (communication fault, not robot fault)
+      </div>
+      <div id="wsError" class="comm-warn hidden"></div>
+    </section>
+
+    <!-- CONTROL -->
+    <section class="panel">
+      <div class="panel-head"><h2>CONTROL</h2></div>
+      <div id="ctrlHint" class="ctrl-hint"></div>
+
+      <div class="ctrl-row">
+        <input id="ctrlTarget" class="num-in" type="number" min="0" max="180" step="1" value="90" inputmode="numeric" />
+        <span class="deg">&deg;</span>
+        <button id="btnSend" class="btn btn-primary">SEND</button>
+        <button id="btnStop" class="btn btn-ghost">STOP</button>
+        <button id="btnReset" class="btn btn-ghost">RESET</button>
+      </div>
+
+      <div class="exp-row">
+        <button class="btn chip" data-exp="1">Exp&nbsp;1 · 0&rarr;90</button>
+        <button class="btn chip" data-exp="2">Exp&nbsp;2 · 90&rarr;150</button>
+        <button class="btn chip" data-exp="3">Exp&nbsp;3 · 150&rarr;30</button>
+        <button class="btn chip" data-exp="4">Exp&nbsp;4 · 0&rarr;180</button>
+      </div>
+      <button id="btnRunDemo" class="btn btn-wide">&#9654; RUN DEMO LOOP</button>
+    </section>
+  </div>
+
+  <!-- ------- CHARTS (full width) ------- -->
+  <section class="panel charts-panel">
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-head">
+          <span class="chart-title">POSITION</span>
+          <span class="chart-legend">
+            <span class="lg lg-tgt"><i class="sw"></i> TARGET</span>
+            <span class="lg lg-act"><i class="sw"></i> ACTUAL</span>
+          </span>
+        </div>
+        <canvas id="chartPos"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-head">
+          <span class="chart-title">POSITION ERROR (t&ndash;a)</span>
+          <span class="chart-legend"><span class="lg lg-err"><i class="sw"></i> ERROR</span></span>
+        </div>
+        <canvas id="chartErr"></canvas>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-head">
+          <span class="chart-title">VELOCITY</span>
+          <span class="chart-legend"><span class="lg lg-vel"><i class="sw"></i> </span><span id="velLegend">EST</span></span>
+        </div>
+        <canvas id="chartVel"></canvas>
+        <div class="chart-note" id="velNote">FPGA 遥测帧不含速度;Live 为估算(EST),Demo 为仿真模型值。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------- EVENT LOG (full width) ------- -->
+  <section class="panel log-panel">
+    <div class="panel-head">
+      <h2>EVENT LOG</h2>
+      <button id="btnClearLog" class="btn btn-tiny">CLEAR</button>
+    </div>
+    <ol id="eventLog" class="event-log"></ol>
+  </section>
+
+</main>
+
+<footer class="foot">
+  FPGA Real-time Controller (EG4S20) &rarr; UART Telemetry &rarr; Browser Digital Twin.
+  <span id="footSrc"></span>
+</footer>
+
+<script src="app.js?v=3" defer></script>
+</body>
+</html>
