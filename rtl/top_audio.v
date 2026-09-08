@@ -113,6 +113,18 @@ module top_audio #(
     );
 
     //===========================================================
+    // VAD 语音活动检测（B1）：有语音→speech_on=1，串口 V 字段显示
+    //   阈值等用 audio_vad 默认；等拿到真实麦克风数据再精调
+    //===========================================================
+    wire speech_on, vad_rise, vad_fall;
+    audio_vad u_vad (
+        .clk(sys_clk), .rst_n(audio_rst_n), .sample_ok(pair_valid),
+        .pcm_l(pcm_l), .pcm_r(pcm_r),
+        .vad(speech_on), .vad_rise(vad_rise), .vad_fall(vad_fall),
+        .peak()
+    );
+
+    //===========================================================
     // LED 双声道电平：avg 取最高置位位 → 对数式 4 级指示条
     //   led[7:4]=左，led[3:0]=右（低=灭，逐级亮起）
     //===========================================================
@@ -172,7 +184,7 @@ module top_audio #(
     audio_status #(.BAUD_TICKS(BAUD_TICKS), .PERIOD_MS(500)) u_st (
         .clk(sys_clk), .rst_n(audio_rst_n), .tick_1ms(tick_1ms),
         .frame_ok(pair_valid),
-        .e_l(pk_o_l), .e_r(pk_o_r), .tx(tx)
+        .e_l(pk_o_l), .e_r(pk_o_r), .vad_in(speech_on), .tx(tx)
     );
 
 endmodule

@@ -1,12 +1,9 @@
 //------------------------------------------------------------------------------
 // audio_status.v   调试用状态上报：每 500ms 无条件发一行（不依赖音频帧）
-//   行格式（18 字节）：
-//     'P' + 4 hex(本 0.5s 收到的帧数) + ' ' + 'L' + 4 hex(左能量) +
-//     ' ' + 'R' + 4 hex(右能量) + '\n'
-//   例：0.5s 收到 0x5DC0(=24000) 帧、左右能量 0x1234/0x0002
-//       → "P5DC0 L1234 R0002\n"
-//   用途：即使 ES8388 完全没出帧，也能看到串口在动 → 先区分
-//         "FPGA+UART 好不好" 与 "codec 出没出帧"。
+//   行格式（20 字节）：
+//     'P' + 4 hex(帧数) + ' ' + 'L' + 4 hex(左能量) + ' ' + 'R' + 4 hex(右能量)
+//     + ' ' + 'V'(0/1=VAD 语音活动) + '\n'
+//   例："P5DC0 L1234 R0002 V1\n"
 //   内部例化 uart_tx，沿用 busy 握手。帧计数 n 每 500ms 清零。
 //------------------------------------------------------------------------------
 module audio_status #(
@@ -20,6 +17,7 @@ module audio_status #(
     input  wire       frame_ok,        // 每立体声对 1 拍（audio_pcm_bridge.pair_valid）
     input  wire [VAL_W-1:0] e_l,       // 左能量(avg 高 16 位)
     input  wire [VAL_W-1:0] e_r,       // 右能量
+    input  wire       vad_in,          // VAD 语音活动(0/1)
     output wire       tx
 );
     wire tx_busy;
@@ -50,7 +48,7 @@ module audio_status #(
         end
     end
 
-    // 组合：帧内字节号 0..17 → ASCII
+    // 组合：帧内字节号 0..19 → ASCII
     reg [4:0]  bi;
     reg [3:0]  nib;
     always @(*) begin
@@ -60,7 +58,9 @@ module audio_status #(
             5'd6 : byte_out = "L";
             5'd11: byte_out = " ";
             5'd12: byte_out = "R";
-            5'd17: byte_out = "\n";
+            5'd17: byte_out = " ";
+            5'd18: byte_out = vad_in ? "1" : "0";
+            5'd19: byte_out = "\n";
             default: begin
                 if      (bi >= 1 && bi <= 4)  nib = n_snap[(3-(bi-1))*4 +: 4];
                 else if (bi >= 7 && bi <= 10) nib = e_l[(3-(bi-7))*4 +: 4];
@@ -86,7 +86,7 @@ module audio_status #(
             end else begin
                 if (!tx_busy) begin
                     sent <= 1'b0;
-                    if (bi == 5'd17) framing <= 1'b0;
+                    if (bi == 5'd19) framing <= 1'b0;
                     else             bi     <= bi + 1'b1;
                 end
             end

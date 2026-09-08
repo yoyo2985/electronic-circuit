@@ -12,12 +12,13 @@ module tb_audio_status;
     localparam TICK_GAP = 400;         // clk
     reg clk = 1'b0, rst_n = 1'b0;
     reg tick_1ms = 1'b0, frame_ok = 1'b0;
+    reg vad_in = 1'b0;
     reg [15:0] e_l = 0, e_r = 0;
     wire tx;
 
     audio_status #(.BAUD_TICKS(B), .VAL_W(16), .PERIOD_MS(4)) DUT (
         .clk(clk), .rst_n(rst_n), .tick_1ms(tick_1ms), .frame_ok(frame_ok),
-        .e_l(e_l), .e_r(e_r), .tx(tx)
+        .e_l(e_l), .e_r(e_r), .vad_in(vad_in), .tx(tx)
     );
 
     always #10 clk = ~clk;
@@ -50,7 +51,7 @@ module tb_audio_status;
         else if (rx_done && !first_done) begin
             rb[n] <= rx_data;
             n <= n + 1;
-            if (n == 17) first_done <= 1'b1;   // 第一行收完即停
+            if (n == 19) first_done <= 1'b1;   // 第一行收完即停
         end
     end
 
@@ -74,6 +75,7 @@ module tb_audio_status;
 
         e_l = 16'h1234;
         e_r = 16'hABCD;
+        vad_in = 1'b1;               // VAD=1 → 行尾 " V1"
         for (k = 0; k < 3; k = k + 1) begin
             frame_ok = 1'b1;
             @(posedge clk);
@@ -93,10 +95,12 @@ module tb_audio_status;
         expect(11, " ");
         expect(12, "R");
         expect(13, "A"); expect(14, "B"); expect(15, "C"); expect(16, "D");
-        expect(17, "\n");
+        expect(17, " ");
+        expect(18, "1");                 // VAD=1
+        expect(19, "\n");
 
         if (bad == 0)
-            $display("TEST PASS : first line 'P0003 L1234 RABCD' n=%0d", n);
+            $display("TEST PASS : first line 'P0003 L1234 RABCD V1' n=%0d", n);
         else
             $display("TEST FAIL : bad=%0d n=%0d", bad, n);
         $finish;
