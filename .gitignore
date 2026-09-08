@@ -30,3 +30,6 @@ __pycache__/
 # 真实语音/派生特征(隐私/大文件)
 sounds/
 data/speaker_features/
+
+# 参考克隆(基座, 不入库)
+recognition/
