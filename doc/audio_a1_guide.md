@@ -6,7 +6,7 @@
 ## 验收标准（上板后）
 1. 对 **mic1（左咪头）** 说话、捂住 mic2 → `led[7:4]`（左）亮，`led[3:0]`（右）不动。
 2. 对 **mic2** 说话 → 反过来。→ 两路独立即证明，可进 TDOA。
-3. 串口每 0.5s 收一行 `Pxxxx Lxxxx Rxxxx`（P=该 0.5s 收到的音频帧数 ≈5DC0=codec 正常；L/R=左右能量，说话时变大）。
+3. 串口每 0.5s 收一行 `Pxxxx Lxxxx Rxxxx Vx`（P=帧数 ≈5DC0=codec 正常；L/R=左右能量峰值；V=0/1 语音活动，有语音变 1）。
 
 ## 已交付文件
 | 文件 | 说明 |
@@ -15,7 +15,7 @@
 | `rtl/audio_pcm_bridge.v` | I2S 收左右 24bit + 跨时钟成帧（**新写**） |
 | `rtl/audio_energy.v` | 每声道 1024 帧窗口平均 \|x\|（**新写**） |
 | `rtl/audio_rpt.v` | 按窗细报 UART ASCII（备用） |
-| `rtl/audio_status.v` | 调试状态行：每 0.5s 无条件发 `Pxxxx Lxxxx Rxxxx\n`（**当前顶层用这个**） |
+| `rtl/audio_status.v` | 调试状态行：每 0.5s 发 `Pxxxx Lxxxx Rxxxx Vx`（**当前顶层用这个**，V=VAD） |
 | `rtl/audio/` | 复用官方配置链 `es8388_config / i2c_reg_cfg / i2c_dri` + 真 PLL `clk_wiz_0.v` |
 | `constr/top_audio.adc` | 引脚约束（aud_* 照官方例程，与 V1 工程零冲突） |
 | `sim/tb_audio_pcm_bridge.v` `tb_audio_energy.v` `tb_audio_rpt.v` | 三个已跑 PASS 的 Testbench |

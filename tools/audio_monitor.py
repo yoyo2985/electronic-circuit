@@ -11,7 +11,7 @@ try:
 except ImportError:
     sys.exit("需要 pyserial:  pip install pyserial")
 
-LINE = re.compile(r"P([0-9A-Fa-f]{4}) L([0-9A-Fa-f]{4}) R([0-9A-Fa-f]{4})")
+LINE = re.compile(r"P([0-9A-Fa-f]{4}) L([0-9A-Fa-f]{4}) R([0-9A-Fa-f]{4})(?: V([01]))?")
 
 def bars(v):
     v = min(v, 0xFFFF)
@@ -22,7 +22,7 @@ def main():
     port = sys.argv[1] if len(sys.argv) > 1 else "COM7"
     s = serial.Serial(port, 115200, timeout=0.2)
     print(f"监听 {port} @115200, Ctrl-C 退出\n")
-    print("  P=每0.5s音频帧数(≈5DC0/24000 → codec正常)   L左  R右")
+    print("  P=每0.5s音频帧数(≈24000→codec正常)  L左  R右  V=语音活动")
     buf = b""
     while True:
         try:
@@ -37,8 +37,9 @@ def main():
                 p = int(m.group(1), 16)
                 l = int(m.group(2), 16)
                 r = int(m.group(3), 16)
-                sys.stdout.write("\r" + " " * 78 + "\r")
-                sys.stdout.write(f"P:{p:5d}  L {bars(l)} {l:5}  |  R {bars(r)} {r:5}")
+                v = m.group(4)
+                sys.stdout.write("\r" + " " * 84 + "\r")
+                sys.stdout.write(f"P:{p:5d}  L {bars(l)} {l:5}  |  R {bars(r)} {r:5}  V:{'1' if v == '1' else '0'}")
                 sys.stdout.flush()
 
 if __name__ == "__main__":
