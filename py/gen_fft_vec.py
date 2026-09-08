@@ -52,9 +52,9 @@ def main():
         f.write("\n".join(f"{v & 0xFFFFFFFF:08x}" for v in er))
     with open(os.path.join(d, "fft_exp_im.mem"), "w") as f:
         f.write("\n".join(f"{v & 0xFFFFFFFF:08x}" for v in ei))
-    with open(os.path.join(d, f"tw_re_{N}.mem"), "w") as f:
+    with open(os.path.join(d, "tw_re.mem"), "w") as f:
         f.write("\n".join(f"{v & 0xFFFF:04x}" for v in tw_r))
-    with open(os.path.join(d, f"tw_im_{N}.mem"), "w") as f:
+    with open(os.path.join(d, "tw_im.mem"), "w") as f:
         f.write("\n".join(f"{v & 0xFFFF:04x}" for v in tw_i))
     print(f"N={N} perm[:8]={perm[:8]}")
     print(f"exp_re[:6]={[int(v) for v in er[:6]]} exp_im[:6]={[int(v) for v in ei[:6]]}")

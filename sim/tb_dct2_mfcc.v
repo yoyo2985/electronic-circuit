@@ -6,7 +6,7 @@
 
 module tb_dct2_mfcc;
 
-    localparam M = 6, K = 4;
+    localparam M = 20, K = 13;
 
     reg clk = 1'b0, rst_n = 1'b0;
     reg in_valid = 1'b0;

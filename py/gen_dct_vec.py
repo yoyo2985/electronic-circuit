@@ -8,7 +8,7 @@ import numpy as np
 import os
 import sys
 
-M, K, DQ = 6, 4, 12
+M, K, DQ = 20, 13, 12
 
 
 def main():
@@ -19,8 +19,8 @@ def main():
         basis[k] = c * np.cos(np.pi * k * m / M)
     bq = np.clip(np.round(basis * (1 << DQ)), -(1 << 15), (1 << 15) - 1).astype(np.int64)
 
-    # 输入 log-mel(用一条上升曲线较有辨识度)
-    x = np.array([1000, 1200, 2500, 3000, 1800, 900], dtype=np.int64)
+    # 输入 log-mel（确定性上升曲线，20 维）
+    x = (np.arange(M) * 250 + 400).astype(np.int64)
     y = []
     for k in range(K):
         s = int(np.dot(bq[k], x))

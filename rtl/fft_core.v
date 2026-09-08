@@ -3,7 +3,7 @@
 //   N=2^L。输入 N 个实采样（已按位倒序排好，RTL 顺序载入即可），in_valid 逐点。
 //   载满自动跑 L 级蝶形（每级 N/2 个、每个一拍），逐级把和差 >>1（≈输出 DFT/N）。
 //   输出：自然频率序 k=0..N-1 逐点 out_re/out_im（各 32bit 有符号）。
-//   旋转因子表 Q15：data/tw_re_16.mem、tw_im_16.mem（py/gen_fft_vec.py 生成）。
+//   旋转因子表 Q15：data/tw_re.mem、tw_im.mem（py/gen_fft_vec.py 生成，长度=N）。
 //   定点为容差比对：差异源于逐级 floor>>1 与 Q15 截断。
 // 复位：同步低有效 rst_n。
 //------------------------------------------------------------------------------
@@ -28,8 +28,8 @@ module fft_core #(
     reg signed [31:0] im[0:N-1];
     reg signed [15:0] tw_re[0:N-1];
     reg signed [15:0] tw_im[0:N-1];
-    initial $readmemh("data/tw_re_16.mem", tw_re);
-    initial $readmemh("data/tw_im_16.mem", tw_im);
+    initial $readmemh("data/tw_re.mem", tw_re);
+    initial $readmemh("data/tw_im.mem", tw_im);
 
     localparam [1:0] S_LOAD = 0, S_RUN = 1, S_OUT = 2;
     reg [1:0]  st;

@@ -8,7 +8,7 @@
 module tb_fft_core;
 
     localparam AW = 24;
-    localparam N  = 16;
+    localparam N  = 64;
 
     reg clk = 1'b0, rst_n = 1'b0;
     reg in_valid = 1'b0;
