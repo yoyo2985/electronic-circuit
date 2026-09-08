@@ -159,6 +159,14 @@ ES8388 → I2S(PCM 24bit L/R) → VAD → feature_engine(13-D MFCC)
 
 
 
+### KWS 命令识别（并行 What 链，Who+What）
+新增并行命令识别（不改 speaker/utter/feature_engine）：`feature_engine.MFCC → cmd_matcher(4×vtmpl L1) → cmd_vote(窗口众数) → cmd_id(0 stop/1 left/2 right/3 forward)`。决策= `owner_valid && cmd_valid → action(cmd_id)`，否则 IDLE。详见 `doc/voice_control_kws.md`。
+- 命令模板：`python tools/gen_command_templates.py`（需 `sounds/commands/<名>/*.{wav,m4a}`）；
+  无真实命令时仿真用合成模板：`python py/cmd_golden.py`（写 `data/commands/cmd_0..3.mem` 与仿真向量）。
+- 单测：`tb_cmd_matcher`、`tb_cmd_vote` 均与 Python 期望一致 PASS。
+
+
+
 ## 设计规范要点（详见 `doc/design_rules.md`）
 
 - 单一 50MHz 主时钟 + clock enable；禁止用寄存器生成分频时钟。
