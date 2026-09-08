@@ -1,0 +1,8 @@
+owner_test frames=19759 impostor frames=183808
+owner dist: mean=3369.0 std=2068.8 min=711 med=2657 p95=7527 p99=10290
+impostor dist: mean=3384.9 std=2033.2 min=597 med=2775 p1=1207 p5=1435 p10=1585
+候选工作点:
+  FAR<=0/1%/5% -> TH=597 FRR=100.000%
+  FAR<=0/1%/5% -> TH=597 FRR=100.000%
+EER 近似(best_bal TH=2597 far=0.458 frr=0.511)
+推荐(低FAR): TH=21929 (FAR=0 时最小 FRR=n/a)

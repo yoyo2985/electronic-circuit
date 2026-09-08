@@ -1,0 +1,48 @@
+speaker     file                    rate  chfmt        dur_s    peak      rms  quiet
+------------------------------------------------------------------------------------
+owner_sound 20260908_163919.m4a    48000   2fltp        5.31    4920    982.5  False
+owner_sound 20260908_163930.m4a    48000   2fltp        8.41    5885   1401.9  False
+owner_sound 20260908_163942.m4a    48000   2fltp        1.83    5609    985.5  False
+owner_sound 20260908_163946.m4a    48000   2fltp        5.97    4148    603.7  False
+owner_sound 20260908_163954.m4a    48000   2fltp        7.96    6413    767.8  False
+owner_sound 20260908_164004.m4a    48000   2fltp         3.2    4218    880.8  False
+owner_sound 20260908_164011.m4a    48000   2fltp       10.39    4665    814.5  False
+owner_sound 20260908_164023.m4a    48000   2fltp       14.93    5749    824.5  False
+owner_sound 20260908_164040.m4a    48000   2fltp        8.34    6151   1003.5  False
+owner_sound 20260908_164053.m4a    48000   2fltp        7.74    8750   1155.6  False
+owner_sound 20260908_164103.m4a    48000   2fltp        4.27    5241    883.2  False
+owner_sound 20260908_164109.m4a    48000   2fltp        8.66   10393    817.8  False
+owner_sound 20260908_164121.m4a    48000   2fltp         5.8   12420   1558.0  False
+owner_sound 20260908_164128.m4a    48000   2fltp        4.97    7061   1602.2  False
+owner_sound 20260908_164135.m4a    48000   2fltp         8.7    6229   1456.6  False
+stranger1   20260908_164842.m4a    48000   2fltp        7.91    9521   1167.0  False
+stranger1   20260908_164851.m4a    48000   2fltp        9.64    5413   1069.0  False
+stranger1   20260908_164902.m4a    48000   2fltp        1.54    5216   1005.4  False
+stranger1   20260908_164905.m4a    48000   2fltp        6.34    5442    809.3  False
+stranger1   20260908_164913.m4a    48000   2fltp        5.38    5337   1028.6  False
+stranger1   20260908_164920.m4a    48000   2fltp        7.36    7076   1108.7  False
+stranger1   20260908_164928.m4a    48000   2fltp        6.08   22963   2919.3  False
+stranger1   20260908_164938.m4a    48000   2fltp       11.41   18299   1460.6  False
+stranger1   20260908_164951.m4a    48000   2fltp        7.98    5719   1237.1  False
+stranger1   20260908_165000.m4a    48000   2fltp       14.19    4275    870.9  False
+stranger1   20260908_165015.m4a    48000   2fltp        5.55    5323   1116.3  False
+stranger1   20260908_165022.m4a    48000   2fltp        9.96    4789    878.8  False
+stranger1   20260908_165033.m4a    48000   2fltp        8.58    5927    907.3  False
+stranger1   20260908_165043.m4a    48000   2fltp       10.56    6057   1091.1  False
+stranger2   20260908_165300.m4a    48000   2fltp        8.62    3394    422.9  False
+stranger2   20260908_165310.m4a    48000   2fltp        7.77    3436    746.4  False
+stranger2   20260908_165319.m4a    48000   2fltp       10.22    4000    742.6  False
+stranger2   20260908_165331.m4a    48000   2fltp        9.28    5410    786.2  False
+stranger2   20260908_165407.m4a    48000   2fltp       11.69    5345    826.4  False
+stranger2   20260908_165434.m4a    48000   2fltp       12.93    7003    991.4  False
+stranger2   20260908_165448.m4a    48000   2fltp       10.56    7189    927.0  False
+stranger2   20260908_165501.m4a    48000   2fltp       24.17    8421    968.2  False
+stranger2   20260908_165526.m4a    48000   2fltp        9.54    5505    964.5  False
+stranger2   20260908_165537.m4a    48000   2fltp         7.4    6115   1016.6  False
+------------------------------------------------------------------------------------
+文件总数=39
+  owner_sound = 15
+  stranger1 = 14
+  stranger2 = 10
+采样率集=[48000] 声道集=[2]
+静音/极弱文件=0
