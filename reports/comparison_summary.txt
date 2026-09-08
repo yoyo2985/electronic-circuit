@@ -1,7 +1,13 @@
-owner=15 impostor=24
-A(MFCC L1) EER=0.000 thr=1319
-B(CAM++ cos) EER=0.017 thr=0.9194
-A owner dist: mean=1143 min=303 max=2704
-A impostor dist: mean=2112 min=466 max=6074
-B owner cos: mean=0.9706 min=0.8975 max=0.9929
-B impostor cos: mean=0.8463 min=0.7816 max=0.9447
+[full] full(模板=全 owner 均值) — 乐观参考
+  owner_test=15  impostor对照数=24
+  A(MFCC L1) EER=0.000 thr=1319
+  B(CAM++ cos) EER=0.017 thr=0.9195
+  A own dist mean=1143 imp mean=2112
+  B own cos mean=0.9706 imp mean=0.8463
+[loo] 本结果基于 leave-one-out 验证，更接近真实泛化能力
+  owner_test=15  impostor对照数=360
+  A(MFCC L1) EER=0.000 thr=1413
+  B(CAM++ cos) EER=0.000 thr=0.9247
+  A own dist mean=1225 imp mean=2113
+  B own cos mean=0.9662 imp mean=0.8462
+差异对比: full A=0.000/B=0.017  vs  LOO A=0.000/B=0.000

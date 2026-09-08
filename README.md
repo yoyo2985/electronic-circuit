@@ -148,8 +148,10 @@ ES8388 → I2S(PCM 24bit L/R) → VAD → feature_engine(13-D MFCC)
 - **导出模型**（ModelScope CAMPPlus → ONNX，动态帧轴）：
   `python tools/export_campplus_onnx.py` → `py/campplus/models/campplus_emb.onnx`（已 gitignore，模型不入库）。
   推理接口见 `py/campplus/interface.py`（`extract_embedding`/`verify_speaker`，192-D/L2/余弦）。
-- **A/B 对比**（全量 owner15 + impostor24；A=MFCC13+L1 录音级、B=CAM++ 余弦，模板=全 owner 均值）：
-  `python tools/benchmark_ab.py` → `reports/{comparison_campplus_vs_mfcc.csv, roc_comparison.png, det_comparison.png, comparison_summary.txt}`
+- **A/B 对比**（A=MFCC13+L1 录音级、B=CAM++ 余弦）两种模式：
+  - `python tools/benchmark_ab.py --mode full` — 模板=全部 owner 均值（乐观参考）；
+  - `python tools/benchmark_ab.py --mode loo` 或 `both`(默认) — **leave-one-out**：每轮留 1 条 owner 测试、其余 14 条均值做模板，impostor 对每轮模板对照；更接近真实泛化。
+  - 输出 `reports/{comparison_campplus_vs_mfcc.csv, *_loo.csv, roc|det_comparison*.png, roc_loo_*.png, comparison_summary.txt}`
 - **软件在环（无硬件）**：
   `python tools/sil_audio_controller.py --audio <命令m4a> --embedder mfcc|campplus`
 - 当前结果（2026-09-08，注意乐观性：模板含被评身份 + 每说话人仅 15/24 条录音）：
