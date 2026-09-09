@@ -62,7 +62,8 @@ module top_audio #(
         .rst_n  (rst_i),
         .volume (2'b01),              // 固定中等增益
         .aud_scl(aud_scl),
-        .aud_sda(aud_sda)
+        .aud_sda(aud_sda),
+        .inp_sel(3'b000)              // ADC 输入选 IN1(LIN1/RIN1)=咪头，勿悬空
     );
 
     //===========================================================
