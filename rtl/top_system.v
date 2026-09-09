@@ -6,12 +6,17 @@
 //   状态机：IDLE→READY→MOVE→HOLD，故障进 FAULT，CLR 复位。
 //   故障演示：fault_sw(SW2,A11) 拨上=模拟堵转/碰撞 → 进 FAULT(LED3)。
 //   tx 接 CH340(RXD) 供 PC 收遥测帧(115200)。SW0=rst_n 拨上=运行。
-// 参数化：MS_DIV / VEL_DEG_S / TELEM_MS。
+//   蜂鸣器反馈：数字键=2kHz/80ms，KEY10 清除=800Hz/150ms，KEY11 确认=3kHz/120ms。
+// 参数化：MS_DIV / VEL_DEG_S / TELEM_MS / BEEP_*_FREQ / BEEP_*_DUR。
 //------------------------------------------------------------------------------
 module top_system #(
     parameter MS_DIV    = 50000,
     parameter VEL_DEG_S = 150,     // 演示速度：参考轨迹更快、避免慢速误报堵转
-    parameter TELEM_MS  = 100
+    parameter TELEM_MS  = 100,
+    // 蜂鸣器音效：数字/清除/确认 三种（频率 Hz / 时长 ms）
+    parameter BEEP_DIG_FREQ = 2000,  parameter BEEP_DIG_DUR = 80,
+    parameter BEEP_CLR_FREQ = 800,   parameter BEEP_CLR_DUR = 150,
+    parameter BEEP_ENT_FREQ = 3000,  parameter BEEP_ENT_DUR = 120
 ) (
     input  wire       clk,
     input  wire       rst_n,
@@ -21,7 +26,8 @@ module top_system #(
     output wire       tx,             // 遥测串口
     output wire [7:0] seg,
     output wire [3:0] dig_cs,
-    output wire [7:0] led
+    output wire [7:0] led,
+    output wire       buzzer_out      // 无源蜂鸣器 H11
 );
     // ---------- 线网声明（先声明后例化，避免隐式网冲突） ----------
     wire tick_1ms;
@@ -127,6 +133,27 @@ module top_system #(
         .bcd_data({4'd0, hun, ten, uni}), .points(4'b0000), .blank(blank),
         .seg(seg), .dig_cs(dig_cs)
     );
+
+    // ---------- 蜂鸣器反馈：数字/清除/确认 三种音效 ----------
+    wire key_digit = key_event && (key <= 4'd9);
+    wire key_clr   = key_event && (key == 4'd10);
+    wire key_enter = key_event && (key == 4'd11);
+
+    wire bz_digit, bz_clr, bz_enter;
+    beep_gen #(.FREQ_HZ(BEEP_DIG_FREQ), .DUR_MS(BEEP_DIG_DUR)) u_bz_digit (
+        .clk(clk), .rst_n(rst_n), .tick_1ms(tick_1ms),
+        .trigger(key_digit), .buzzer(bz_digit)
+    );
+    beep_gen #(.FREQ_HZ(BEEP_CLR_FREQ), .DUR_MS(BEEP_CLR_DUR)) u_bz_clr (
+        .clk(clk), .rst_n(rst_n), .tick_1ms(tick_1ms),
+        .trigger(key_clr), .buzzer(bz_clr)
+    );
+    beep_gen #(.FREQ_HZ(BEEP_ENT_FREQ), .DUR_MS(BEEP_ENT_DUR)) u_bz_enter (
+        .clk(clk), .rst_n(rst_n), .tick_1ms(tick_1ms),
+        .trigger(key_enter), .buzzer(bz_enter)
+    );
+    // 无源蜂鸣器由方波驱动；同一时刻最多一个音效在响，直接按位或
+    assign buzzer_out = bz_digit | bz_clr | bz_enter;
 
     // LED0=有目标, LED1=运动, LED2=到位, LED3=故障
     assign led = {4'b0000, faulted, at_target, moving, tvalid};

@@ -14,11 +14,20 @@ module tb_top_system;
     wire [7:0] seg;
     wire [3:0] dig_cs;
     wire [7:0] led;
+    wire buzzer_out;
 
     top_system #(.MS_DIV(4), .VEL_DEG_S(250), .TELEM_MS(30)) dut (
         .clk(clk), .rst_n(rst_n), .col(col), .row(row),
-        .fault_sw(fault_sw), .tx(tx), .seg(seg), .dig_cs(dig_cs), .led(led)
+        .fault_sw(fault_sw), .tx(tx), .seg(seg), .dig_cs(dig_cs), .led(led),
+        .buzzer_out(buzzer_out)
     );
+
+    // 监测蜂鸣器是否被触发拉高过
+    reg beep_seen = 0;
+    always @(posedge clk) begin
+        if (!rst_n)      beep_seen <= 1'b0;
+        else if (buzzer_out) beep_seen <= 1'b1;
+    end
 
     always #10 clk = ~clk;
 
@@ -62,6 +71,9 @@ module tb_top_system;
         if (dut.u_ti.entry == 9'd90)
             $display("PASS 输入 90");
         else begin $display("FAIL entry=%0d", dut.u_ti.entry); err = err + 1; end
+        if (beep_seen)
+            $display("PASS 数字键触发蜂鸣");
+        else begin $display("FAIL 数字键未触发蜂鸣"); err = err + 1; end
 
         // ENTER 启动
         press_label(11);
