@@ -108,8 +108,8 @@ always @(posedge clk or negedge rst_n) begin
             5'd4 : i2c_data <= {8'h04 ,8'h3c};
                     // R8,主模式，MCLK不分频，BCLK自动
             5'd5 : i2c_data <= {8'h08 ,8'h80};
-                    // R9，麦克风增益+30dB(与 ESP32 参考驱动一致: 0xAA)
-            5'd6 : i2c_data <= {8'h09 ,8'hAA};
+                    // R9，麦克风增益+6dB(官方默认 0x22；+30dB 满幅削顶致 VAD/能量常饱和)
+            5'd6 : i2c_data <= {8'h09 ,8'h22};
                     // R12, ADC设置为24bit I2S模式
             5'd7 : i2c_data <= {8'h0c,8'h00};
                     // R13,设置ADC采样率12.288/256 = 48KSPS

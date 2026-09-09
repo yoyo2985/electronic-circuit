@@ -12,7 +12,15 @@
 //        led2 = DO   (aud_adcdat,R14)有翻转（静音时可能不亮，说话才亮）
 //        led3 = 常亮：程序在跑、PLL 锁、复位已放开
 //        led4 = 亮：ES8388 在 I2C 上应答了（供电+地址+SDA/SCL 都对）
-// 判读：
+//   5) I2S 原始数据嗅探：每 100ms 经 UART(115200,D12) 发一行
+//        "L<6hex> R<6hex> C<4hex>\n"
+//        L/R = 窗口内第一个立体声对的 24bit 原始 PCM（补码 hex）
+//        C   = 窗口内样本对数（48k 时应≈4800）
+//      判读：
+//        · C≈4800 且 L/R 随说话变化 → 整条采集链已通，之前的问题在能量统计环节
+//        · C≈4800 但 L/R 恒 0x000000 → DO 上有时钟但无 ADC 数据（codec 模拟端/咪头）
+//        · C 乱/≈0                  → BCK/WS/DO 对齐或接线问题
+// 判读（LED）：
 //   · led3 灭 → 程序没在跑/复位没放开（查 SW0、下载）
 //   · led4 灭 → ES8388 不应答：供电或 I2C 地址或 SCL/SDA 线问题
 //   · led4 亮 led0 灭 → 地址/供电都对但没出时钟：查 MCK/主从
@@ -29,8 +37,10 @@ module top_audio_wiretest (
     input  wire aud_lrc,       // M7
     input  wire aud_adcdat,    // R14
     output wire aud_mclk,      // N5
+    output wire aud_dacdat,    // P6   FPGA→codec DIN（本自检构建：计数斜坡）
     output wire aud_scl,       // R12
     inout  wire aud_sda,       // R9
+    output wire tx,            // UART 115200, D12（I2S 原始数据嗅探打印）
     output wire [7:0] led      // led[4:0] 含义见注释
 );
 
@@ -79,6 +89,173 @@ module top_audio_wiretest (
         else begin
             tc <= tc + 1'b1;
             if (tc == 15'd24999) begin tc <= 15'd0; tone <= ~tone; end
+        end
+    end
+
+    //==========================================================================
+    // I2S 原始数据嗅探：把 DO(R14) 上采到的 24bit PCM 直接打上串口
+    //   ⚠ 布线铁律（2026-09-09 实测踩坑）：R14(FPGA adcdat) ↔ 模块 I2S_DI ↔
+    //     ES8388 ASDOUT(ADC 输出)；P6(FPGA dacdat) ↔ 模块 I2S_DO ↔ DSDIN(DAC 输入)。
+    //     模块 DI/DO 命名站在 FPGA 侧。散线版模块曾把 DI/DO 接反 → R14 收到悬空
+    //     DAC 线恒 0xFFFFFF。换正后 R14 才收到 codec 真实 ADC 数据。
+    //   上电后先发一行配置健康：CFG<2hex>\n（<2hex>=I2C 无应答传输次数）
+    //     CFG00 → 24 笔配置写全部应答（codec 供电/地址0x11/SDA/SCL 正常）
+    //     CFG..>00 → 有 NACK：查 ES8388 供电、I2C 地址、SDA/SCL 线
+    //   然后每 100ms 发一行嗅探：L<6hex> R<6hex> C<4hex>\n
+    //     L/R = 窗口内第一个立体声对的原始 24bit 采样(signed 补码)
+    //     C   = 窗口内样本对计数（48k 时应≈4800）
+    //   判读：
+    //     · CFG00 C≈4800 且 L/R 随说话变化 → 整条采集链已通
+    //     · CFG00 C≈4800 但 L/R 恒 0xFFFFFF(=-1LSB 静音) → codec 配置到位但
+    //       ADC 模拟端没吃到咪头信号：查咪头接线/偏置/输入选择(sw)/差分模式
+    //     · CFG00 C≈4800 但 L/R 恒 0x000000 → DO 有信号但 ADC 出数字 0
+    //     · CFG 非 00 → 配置都没写进去，先修 I2C 链路再看模拟端
+    //     · C 乱/≈0 → BCK/WS/DO 对齐或接线问题
+    //==========================================================================
+
+    // ---- 配置健康：复位后 ~10ms 窗口内统计 I2C 无应答次数 ----
+    reg  [15:0] cfg_ms;
+    reg         cfg_window;
+    reg         cfg_win_end;      // 窗口结束脉冲（1 拍）
+    reg  [7:0]  cfg_nack;         // 窗口内 NACK 次数
+    reg         ack_d;
+    wire        ack_rise = cfg_ack & ~ack_d;
+    always @(posedge sys_clk) begin
+        ack_d <= cfg_ack;
+        if (!rst_i) begin
+            cfg_ms <= 16'd0; cfg_window <= 1'b1;
+            cfg_nack <= 8'd0; cfg_win_end <= 1'b0;
+        end else begin
+            cfg_win_end <= 1'b0;
+            if (tick_1ms) begin
+                if (cfg_ms == 16'd9) begin
+                    cfg_ms <= 16'd0; cfg_window <= 1'b0;
+                    cfg_win_end <= 1'b1;
+                end else cfg_ms <= cfg_ms + 1'b1;
+            end
+            if (cfg_window && ack_rise) cfg_nack <= cfg_nack + 1'b1;
+        end
+    end
+
+    //==========================================================================
+    // DAC 通路自检已完成（计数斜坡验证布线 → DI/DO 换正 → LED2 亮收工）。
+    // 现在 P6(aud_dacdat/DSDIN) 拉低 → DAC 静音，避免自检锯齿从 LOUT/ROUT
+    // 喇叭回灌进咪头干扰 ADC 读数。要再验 DAC 通路可查 git 历史里的斜坡版。
+    //==========================================================================
+    assign aud_dacdat = 1'b0;
+
+    // ---- I2S 采集：桥接器收真实 DO(R14)=codec ASDOUT 的 24bit 麦克风数据 ----
+    //     （DI/DO 散线已按原理图换正：R14↔I2S_DI=ASDOUT、P6↔I2S_DO=DSDIN）
+    wire [23:0] sp_l, sp_r;
+    wire        sp_v;
+    audio_pcm_bridge u_br (
+        .sys_clk   (sys_clk),
+        .sys_rst_n (rst_i),
+        .aud_bclk  (aud_bclk),
+        .aud_lrc   (aud_lrc),
+        .aud_adcdat(aud_adcdat),
+        .pcm_l     (sp_l),
+        .pcm_r     (sp_r),
+        .pair_valid(sp_v)
+    );
+
+    reg [23:0] sp_l_snap, sp_r_snap;   // 窗口内第一个样本对
+    reg [15:0] sp_cnt;                 // 窗口内样本对计数（连续计）
+    reg [15:0] sp_cnt_snap;            // 窗口边界锁存，显示用（避免清零/显示打架）
+    reg [6:0]  s_ms;                   // 100ms 分频
+    reg        sp_hb;                  // 该发一行了（1 拍脉冲）
+    always @(posedge sys_clk) begin
+        if (!rst_i) begin
+            sp_l_snap <= 24'd0; sp_r_snap <= 24'd0;
+            sp_cnt <= 16'd0; sp_cnt_snap <= 16'd0;
+            s_ms <= 7'd0; sp_hb <= 1'b0;
+        end else begin
+            sp_hb <= 1'b0;
+            if (sp_v) begin
+                if (sp_cnt == 16'd0) begin sp_l_snap <= sp_l; sp_r_snap <= sp_r; end
+                sp_cnt <= sp_cnt + 1'b1;
+            end
+            if (tick_1ms) begin
+                if (s_ms == 7'd99) begin
+                    s_ms <= 7'd0;
+                    sp_hb <= 1'b1;
+                    sp_cnt_snap <= sp_cnt;       // 锁存本窗口样本对数
+                    sp_cnt <= 16'd0;             // 开新窗口
+                end else s_ms <= s_ms + 1'b1;
+            end
+        end
+    end
+
+    wire tx_busy;
+    reg  send;
+    reg  [7:0] byte_out;
+    uart_tx #(.BAUD_TICKS(434)) u_tx (
+        .clk(sys_clk), .rst_n(rst_i), .send(send),
+        .tx_data(byte_out), .tx(tx), .busy(tx_busy)
+    );
+
+    reg line_kind;   // 1=CONF 行(6字节) 0=嗅探行(22字节)
+    reg [4:0] bi;
+    reg [3:0] nib;
+    always @(*) begin
+        if (line_kind) begin
+            case (bi)
+                5'd0 : byte_out = "C";
+                5'd1 : byte_out = "F";
+                5'd2 : byte_out = "G";
+                5'd5 : byte_out = "\n";
+                default: begin
+                    nib = (bi==5'd3) ? cfg_nack[7:4] : (bi==5'd4) ? cfg_nack[3:0] : 4'd0;
+                    byte_out = (nib < 4'd10) ? (8'h30 + nib) : (8'h37 + nib);
+                end
+            endcase
+        end else begin
+            case (bi)
+                5'd0 : byte_out = "L";
+                5'd7 : byte_out = " ";
+                5'd8 : byte_out = "R";
+                5'd15: byte_out = " ";
+                5'd16: byte_out = "C";
+                5'd21: byte_out = "\n";
+                default: begin
+                    if      (bi >= 1 && bi <= 6)  nib = sp_l_snap[(6-bi)*4 +: 4];
+                    else if (bi >= 9 && bi <= 14) nib = sp_r_snap[(14-bi)*4 +: 4];
+                    else if (bi >= 17 && bi <= 20)nib = sp_cnt_snap[(20-bi)*4 +: 4];
+                    else nib = 4'd0;
+                    byte_out = (nib < 4'd10) ? (8'h30 + nib) : (8'h37 + nib);
+                end
+            endcase
+        end
+    end
+
+    reg framing;
+    reg sent;
+    reg cfg_sent;   // CONF 行已发过
+    always @(posedge sys_clk) begin
+        send <= 1'b0;
+        if (!rst_i) begin
+            bi <= 5'd0; framing <= 1'b0; sent <= 1'b0;
+            line_kind <= 1'b0; cfg_sent <= 1'b0;
+        end else begin
+            if (!framing) begin
+                sent <= 1'b0;
+                if (cfg_win_end && !cfg_sent) begin
+                    cfg_sent <= 1'b1;
+                    line_kind <= 1'b1;             // 先发一行 CONF
+                    framing <= 1'b1; bi <= 5'd0;
+                end else if (sp_hb) begin
+                    line_kind <= 1'b0;
+                    framing <= 1'b1; bi <= 5'd0;
+                end
+            end else if (!sent) begin
+                if (!tx_busy) begin send <= 1'b1; sent <= 1'b1; end
+            end else begin
+                if (!tx_busy) begin
+                    sent <= 1'b0;
+                    if (bi == (line_kind ? 5'd5 : 5'd21)) framing <= 1'b0;
+                    else             bi <= bi + 1'b1;
+                end
+            end
         end
     end
 
