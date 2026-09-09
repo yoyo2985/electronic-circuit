@@ -2,7 +2,7 @@
 
 真实 FPGA 控制器（安路 EG4S20BG256 开发板）+ 虚拟物理对象（虚拟电机/编码器）+ PC 数字孪生的闭环控制验证平台。采用“感知 → 决策 → 执行”闭环控制思想，构建机器人数字孪生与实时闭环控制验证平台。
 
-**当前方向（V2，2026-09）**：在 V1 闭环运动基础上扩展 **ES8388 语音感知链**：双声道 PCM → VAD → 13-D MFCC 特征引擎(feature_engine) → 轻量声纹匹配(vtmpl/speaker_verify/utter_vote) → decision_fsm → 差分轮速，目标“主人声控的虚拟机器人”。ES8388 I2C 地址实测 **0x11**（官方例程 0x10 配不上）。硬件数字链路(48k I2S)已通；**mic 模拟前端待修**（见下“诚实状态”）。
+**当前方向（V2，2026-09）**：在 V1 闭环运动基础上扩展 **ES8388 语音感知链**：双声道 PCM → VAD → 13-D MFCC 特征引擎(feature_engine) → 轻量声纹匹配(vtmpl/speaker_verify/utter_vote) → decision_fsm → 差分轮速，目标“主人声控的虚拟机器人”。ES8388 I2C 地址实测 **0x11**（官方例程 0x10 配不上）。**A1 板级采集验收 PASS**（2026-09-09）：codec 真实双麦 24-bit 数据、左右声道独立（见下“诚实状态”）。
 
 Verilog HDL / TangDynasty(TD) / ModelSim / Python(PyAV+NumPy, 仅 Golden/工具/离线，不作实时替代)。
 
@@ -28,17 +28,17 @@ EG4S20 FPGA
 | 05 | `keypad_scan` | ✅ | ✅ | 4×4 矩阵键盘，key_idx=丝印键号（top_key） |
 | 06 | `uart_tx` | ✅ | ✅ | 115200，起始0+8位+停止1 |
 | 07 | `uart_rx` | ✅ | ✅ | 经板上 CH340→COM7 双向实测 |
-| 08 | `target_input` | ✅ | ✅ | 键盘 0..180 目标输入，超限拒收（top_target） |
+| 08 | `target_input` | ✅ | ✅ | 键盘 0..180 目标输入，超限拒收；蜂鸣器三音反馈（top_target） |
 | 09 | `virtual_motor` | ✅ | ✅ | 定点一阶电机+行程限位（top_motor 0↔180） |
 | 10 | `pid_controller` | ✅ | ✅ | 位置环定点 PID+三限幅（top_pid SW 选 40°/120°） |
 | 11 | `trajectory_planner` | ✅ | 整机内 | 限速参考轨迹（梯形近似，不超调） |
 | 12 | `state_machine` | ✅ | 整机内 | IDLE/READY/MOVE/HOLD/FAULT |
 | 13 | `fault_detector` | ✅ | 单测 | 堵转检测；整机 demo 用 SW2 手动故障演示（见下） |
-| 14 | `top_system` | ✅ | ✅ | 键盘目标→状态机→轨迹→PID→电机→故障→遥测全链 |
+| 14 | `top_system` | ✅ | ✅ | 键盘目标→状态机→轨迹→PID→电机→故障→遥测全链 + 按键蜂鸣反馈 |
 | 15 | `uart_telemetry` | ✅ | 整机内 | 遥测帧 `[AA][state][target][pos][chk]` |
 | 16 | `tools/pc_twin.py` | – | 脚本 | PC 端数字孪生：实时打印/曲线 |
 | 17 | DAC（加分） | – | – | 未实现（R-2R 复用 LED 脚，可选） |
-| 18 | ES8388 语音感知 | 见上 V2 章节 | 数字通/mic 待修 | 不再“未实现”，见 V2 语音感知链 |
+| 18 | ES8388 语音感知 | 见上 V2 章节 | A1 采集验收 PASS | 不再“未实现”，见 V2 语音感知链 |
 
 > 注：板上自动堵转检测在低速/整数位粒度下易误判，整机 `top_system` 演示中关闭自动堵转（模块已单测），故障演示通过 SW2 手动触发，报告可如实说明。
 
@@ -82,6 +82,22 @@ vsim -c work.tb_xxx -do "run -all; quit -f"
 
 按键约定：KEY0~9=数字，KEY10=CLR/ACK，KEY11=确认并启动。
 
+按键蜂鸣反馈（整机与阶段 08 相同）：数字键=2kHz/80ms 短“嘀”、KEY10 清除=800Hz/150ms 低鸣、KEY11 确认=3kHz/120ms 高鸣，每次响完自动停止（无源蜂鸣器 `Buzzer_Out=H11`，由 `beep_gen` 方波驱动）。
+
+## 阶段 08 演示：键盘目标输入 + 蜂鸣器反馈（top_target）
+
+工程顶层 `top_target`（源 `rtl/top_target.v`、`rtl/beep_gen.v`，引脚见 `constr/top_target.adc`，新增 `Buzzer_Out=H11`）。与整机演示操作相同：SW0 上拨运行，KEY0~9 逐位输入目标、KEY10 清零、KEY11 确认。
+
+按键音效反馈（无源蜂鸣器由 `beep_gen` 方波驱动，时长/频率均可参数化）：
+
+| 按键 | 音效 |
+|---|---|
+| KEY0~9 数字 | 2kHz / 80ms 短“嘀” |
+| KEY10 清除 | 800Hz / 150ms 低鸣 |
+| KEY11 确认 | 3kHz / 120ms 高鸣 |
+
+每次按键音效响完自动停止，可在蜂鸣器上直接听到三种不同提示音。
+
 ## 板上串口/遥测
 
 - 板上 USB1=JTAG 下载；USB2=CH340 → PC 出现 COM 口。
@@ -124,7 +140,7 @@ ES8388 → I2S(PCM 24bit L/R) → VAD → feature_engine(13-D MFCC)
 
 | 阶段 | 交付 | 验证 |
 |---|---|---|
-| A1 采集 | `audio_pcm_bridge`(I2S 成帧跨时钟)、energy、status(`Pxxxx Lxxxx Rxxxx Vx`)、top_audio | ModelSim PASS；板上数字链路通(P≈24038) |
+| A1 采集 | `audio_pcm_bridge`(I2S 成帧跨时钟)、energy、status(`Pxxxx Lxxxx Rxxxx Vx`)、top_audio | ModelSim PASS；**板上验收 PASS**：P≈24038=48k、真实双麦 24-bit、LED 左右声道独立响应 |
 | B1/B0 | VAD 接入顶层；`py/frontend.py` Golden | PASS |
 | B3 | pre_emph→front_wind(Q15Hann)→fft_core(N=64)→mel_bank→log2/logmel→dct2_mfcc | 各积木逐位/容差 PASS |
 | B4 | `feature_engine`（N64/M20/K13/hop64，含 Power 级） | 全0/1kHz/随机 39 特征逐位 PASS |
@@ -137,7 +153,8 @@ ES8388 → I2S(PCM 24bit L/R) → VAD → feature_engine(13-D MFCC)
 **统一定点参数**：帧/FFT=64、hop=64、power bins=33、mel=20、MFCC=13、PCM=24bit signed、48k、默认 L 声道(R 保留给方向)。Python Golden 与 RTL 用整数镜像逐位一致（`py/audio_golden.py` 与标量/引擎 diff=0）。
 
 ### 诚实状态
-- ES8388 数字链路正常(48k I2S、I2C 地址 0x11)；**mic 模拟前端无有效输入**（已试输入选择 0x00/0x50/差分+PGA24dB 等，待修/待原理图）。
+- **A1 板级采集验收 PASS（2026-09-09，top_audio）**：mic 模拟前端已通，不再是“无有效输入”。根因是 10 脚散线版把模块 **I2S DI/DO 接反**——模块 H1 的 DI/DO 命名站在 FPGA 侧：`I2S_DI`=ES8388 ASDOUT(ADC 输出)→FPGA R14、`I2S_DO`=FPGA P6(DAC 输出)→ES8388 DSDIN；`.adc` 约束自始无误。换正后 R14 收到 codec 真实双麦 ADC 数据，`top_audio` LED 左右两组随 mic1/mic2 各自独立响应 → **双声道独立成立**（TDOA 前提）。PGA 已回落到官方默认 +6dB(0x22)（此前 +30dB 满幅削顶致 VAD/能量常饱和）。
+- **剩余（进 top_voice_system 板级前）**：静音噪声底偏热——串口 `L/R` 峰值饱和 FFFF、VAD 恒 `V1`，能量平均≈2^16 量级，超过 VAD 默认 TH_OFF(=2^16)。接入真实采集桥后需按板上噪声底把 VAD 阈值抬到其上方，避免静音被误判为语音。
 - **B5.4-6 结论**：MFCC13+L1+mean 基线在内容高度相似的真实 m4a 上 **owner/impostor 帧级与录音级均不可分**（如实，不推荐上线、不用拍脑袋阈值）；`TH=5000` 仅占位。待 B5.7 投票(已完成结构) + 更稳前端/受控录制后再评估。
 - 原始语音 `sounds/` 与派生 `data/speaker_features/` 已 gitignore（隐私/体积）。
 
