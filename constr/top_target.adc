@@ -28,3 +28,4 @@ set_pin_assignment	{ led[4] }	{ LOCATION = C16; IOSTANDARD = LVCMOS33; }
 set_pin_assignment	{ led[5] }	{ LOCATION = E13; IOSTANDARD = LVCMOS33; }
 set_pin_assignment	{ led[6] }	{ LOCATION = E16; IOSTANDARD = LVCMOS33; }
 set_pin_assignment	{ led[7] }	{ LOCATION = F16; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ buzzer_out }	{ LOCATION = H11; IOSTANDARD = LVCMOS33; }
