@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
-// tb_utter_vote.v   B5.7 多数投票：7 个极端序列 vs python 镜像
-//   N=8 MIN=5。每测喂入后比对 decision 数与最终 owner；测间复位。
+// tb_utter_vote.v   B5.7c 段级累计投票：7 个极端段 vs python 镜像
+//   MIN_MATCH=5。段内(vad=1)逐帧喂 seq；vad 落下段末出 decision 脉冲。
+//   比对: 段内粘性 owner_valid 与段末 decision 数与 python 镜像一致。
 //------------------------------------------------------------------------------
 `timescale 1ns/1ps
 
@@ -10,13 +11,14 @@ module tb_utter_vote;
     localparam MAXL = 16;
 
     reg clk = 1'b0, rst_n = 1'b0;
-    reg frame_valid = 1'b0, frame_match = 1'b0;
+    reg vad = 1'b0, frame_valid = 1'b0, frame_match = 1'b0;
     wire decision_valid;
     wire owner_valid;
     wire [7:0] frames_seen;
 
-    utter_vote #(.VOTE_N(8), .MIN_MATCH(5)) DUT (
-        .clk(clk), .rst_n(rst_n), .frame_valid(frame_valid), .frame_match(frame_match),
+    utter_vote #(.MIN_MATCH(5)) DUT (
+        .clk(clk), .rst_n(rst_n), .vad(vad),
+        .frame_valid(frame_valid), .frame_match(frame_match),
         .decision_valid(decision_valid), .owner_valid(owner_valid), .frames_seen(frames_seen)
     );
 
@@ -26,21 +28,26 @@ module tb_utter_vote;
     reg selb[0:MAXL-1];
     reg [31:0] flat[0:NTEST*3-1];
 
-    integer t, i, dec, err;
-
-    always @(posedge clk) if (decision_valid) dec = dec + 1;
+    integer t, i, err, owner_during, decv_during;
 
     task feed_len;
         input integer len;
         integer n;
         begin
+            vad = 1'b1;
             for (n = 0; n < len; n = n + 1) begin
                 frame_match = selb[n];
                 frame_valid = 1'b1;
                 @(posedge clk);
             end
             frame_valid = 1'b0;
-            @(posedge clk);
+            @(posedge clk);                 // 段内最后一拍(NBA 已生效)
+            #1;
+            owner_during = owner_valid;     // 段内粘性 owner
+            vad = 1'b0;                     // 段末
+            @(posedge clk);                 // 段末边沿: decision_valid <= owner
+            #1;
+            decv_during = decision_valid;   // 本段判决
         end
     endtask
 
@@ -57,8 +64,6 @@ module tb_utter_vote;
         rst_n = 1'b1;
 
         for (t = 0; t < NTEST; t = t + 1) begin
-            dec = 0;
-            // 选第 t 组序列到 selb
             for (i = 0; i < MAXL; i = i + 1) begin
                 case (t)
                     0: selb[i] = uv0[i];
@@ -71,11 +76,10 @@ module tb_utter_vote;
                 endcase
             end
             feed_len(flat[3*t]);
-            #20;
-            if (dec !== flat[3*t+1] || owner_valid !== flat[3*t+2][0]) begin
+            if (owner_during !== flat[3*t+2][0] || decv_during !== flat[3*t+2][0]) begin
                 if (err < 8)
-                    $display("[ERR] test%0d dec=%0d want=%0d owner=%b want=%b",
-                             t, dec, flat[3*t+1], owner_valid, flat[3*t+2]);
+                    $display("[ERR] test%0d owner=%b want=%b decv=%b want=%b",
+                             t, owner_during, flat[3*t+2], decv_during, flat[3*t+2]);
                 err = err + 1;
             end
             // 测间复位
@@ -83,7 +87,7 @@ module tb_utter_vote;
         end
 
         if (err == 0)
-            $display("TEST PASS : %0d extreme utterance sequences exact vs python", NTEST);
+            $display("TEST PASS : %0d extreme utterance segments exact vs python", NTEST);
         else
             $display("TEST FAIL : err=%0d", err);
         $finish;

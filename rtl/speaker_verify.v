@@ -7,7 +7,7 @@
 module speaker_verify #(
     parameter DIM = 13,
     parameter TH  = 5000,
-    parameter TPL = "data/spk_tpl.mem"
+    parameter [207:0] TPLV = 208'h001c005100f900f2008c004affbcff66fd0afc850179fb500bc9
 ) (
     input  wire                clk,
     input  wire                rst_n,
@@ -23,7 +23,7 @@ module speaker_verify #(
     wire [31:0] v_dist;
     wire v_match;
 
-    vtmpl #(.DIM(DIM), .TH(TH), .TPL(TPL)) u_vt (
+    vtmpl #(.DIM(DIM), .TH(TH), .TPLV(TPLV)) u_vt (
         .clk(clk), .rst_n(rst_n),
         .in_valid(fe_feature_valid), .in_v(fe_feature_data),
         .out_valid(v_ok), .out_dist(v_dist), .out_match(v_match)

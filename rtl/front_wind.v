@@ -29,8 +29,78 @@ module front_wind #(
     localparam signed [47:0] MIN = -(1 << (AW - 1));
 
     reg signed [AW-1:0] wbuf[0:N-1];
-    reg [15:0]          win[0:N-1];
-    initial $readmemh("data/hann_64.mem", win);
+  function [15:0] win_fn(input integer a);
+    begin
+      case (a)
+          0: win_fn = 16'h0000;
+          1: win_fn = 16'h004f;
+          2: win_fn = 16'h013b;
+          3: win_fn = 16'h02c1;
+          4: win_fn = 16'h04df;
+          5: win_fn = 16'h078f;
+          6: win_fn = 16'h0ac9;
+          7: win_fn = 16'h0e87;
+          8: win_fn = 16'h12bf;
+          9: win_fn = 16'h1766;
+          10: win_fn = 16'h1c72;
+          11: win_fn = 16'h21d5;
+          12: win_fn = 16'h2782;
+          13: win_fn = 16'h2d6c;
+          14: win_fn = 16'h3384;
+          15: win_fn = 16'h39ba;
+          16: win_fn = 16'h4000;
+          17: win_fn = 16'h4646;
+          18: win_fn = 16'h4c7c;
+          19: win_fn = 16'h5294;
+          20: win_fn = 16'h587e;
+          21: win_fn = 16'h5e2b;
+          22: win_fn = 16'h638e;
+          23: win_fn = 16'h689a;
+          24: win_fn = 16'h6d41;
+          25: win_fn = 16'h7179;
+          26: win_fn = 16'h7537;
+          27: win_fn = 16'h7871;
+          28: win_fn = 16'h7b21;
+          29: win_fn = 16'h7d3f;
+          30: win_fn = 16'h7ec5;
+          31: win_fn = 16'h7fb1;
+          32: win_fn = 16'h8000;
+          33: win_fn = 16'h7fb1;
+          34: win_fn = 16'h7ec5;
+          35: win_fn = 16'h7d3f;
+          36: win_fn = 16'h7b21;
+          37: win_fn = 16'h7871;
+          38: win_fn = 16'h7537;
+          39: win_fn = 16'h7179;
+          40: win_fn = 16'h6d41;
+          41: win_fn = 16'h689a;
+          42: win_fn = 16'h638e;
+          43: win_fn = 16'h5e2b;
+          44: win_fn = 16'h587e;
+          45: win_fn = 16'h5294;
+          46: win_fn = 16'h4c7c;
+          47: win_fn = 16'h4646;
+          48: win_fn = 16'h4000;
+          49: win_fn = 16'h39ba;
+          50: win_fn = 16'h3384;
+          51: win_fn = 16'h2d6c;
+          52: win_fn = 16'h2782;
+          53: win_fn = 16'h21d5;
+          54: win_fn = 16'h1c72;
+          55: win_fn = 16'h1766;
+          56: win_fn = 16'h12bf;
+          57: win_fn = 16'h0e87;
+          58: win_fn = 16'h0ac9;
+          59: win_fn = 16'h078f;
+          60: win_fn = 16'h04df;
+          61: win_fn = 16'h02c1;
+          62: win_fn = 16'h013b;
+          63: win_fn = 16'h004f;
+        default: win_fn = 16'sh0000;
+      endcase
+    end
+  endfunction
+
 
     reg [LOGN-1:0] wcnt;              // 写入计数
     reg            emit;              // 正在读帧输出
@@ -61,7 +131,7 @@ module front_wind #(
             // （真实 48k 间隔远大于 N 拍读出，emit 期间不会来新采样；来了则丢弃）
 
             if (emit) begin
-                pw = $signed(wbuf[ridx]) * $signed({1'b0, win[ridx]});
+                pw = $signed(wbuf[ridx]) * $signed({1'b0, win_fn(ridx)});
                 o  = (pw + HALF) >>> 15;   // Q15，向下取整
                 if (o > MAX)      out_data <= MAX[AW-1:0];
                 else if (o < MIN) out_data <= MIN[AW-1:0];

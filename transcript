@@ -1,8 +1,0 @@
-# vsim -c work.tb_top_system -do "run -all; quit -f" 
-# Start time: 20:30:41 on Sep 07,2026
-# ** Error: (vsim-19) Failed to access library 'work' at "work".
-# 
-# No such file or directory. (errno = ENOENT)
-# Error loading design
-# End time: 20:30:41 on Sep 07,2026, Elapsed time: 0:00:00
-# Errors: 1, Warnings: 0

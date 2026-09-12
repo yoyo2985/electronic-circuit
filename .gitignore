@@ -14,13 +14,19 @@ _extract_basic/
 # ---- ModelSim ----
 sim/work/
 sim/audio_sim/work/
-sim/transcript
+transcript
 *.wlf
 *.vstf
 
+# ---- 报告 / LaTeX 编译中间产物（report.tex / report.pdf 提交）----
+report.aux
+report.lof
+report.out
+report.log
+report.synctex.gz
+
 # ---- 隐私 / 本地 ----
 .claude/
-transcript/
 
 # ---- Python ----
 __pycache__/

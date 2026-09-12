@@ -1,0 +1,11 @@
+# top_cap.adc  Phase5a 纯采集最小顶层
+#   clk/rst + ES8388 J0 六线 + UART tx(D12) —— 无键盘/LED/蜂鸣器，引脚最少。
+set_pin_assignment	{ clk }	{ LOCATION = R7; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ rst_n }	{ LOCATION = A9; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ aud_mclk }	{ LOCATION = N5; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ aud_bclk }	{ LOCATION = M6; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ aud_lrc }	{ LOCATION = M7; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ aud_adcdat }	{ LOCATION = R14; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ aud_scl }	{ LOCATION = R12; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ aud_sda }	{ LOCATION = R9; IOSTANDARD = LVCMOS33; }
+set_pin_assignment	{ tx }	{ LOCATION = D12; IOSTANDARD = LVCMOS33; }
