@@ -6,7 +6,7 @@
 module vtmpl #(
     parameter DIM = 4,
     parameter TH  = 500,
-    parameter TPL = "data/vtmpl.mem"
+    parameter [(DIM*16)-1:0] TPLV = 0   // 模板向量: 每 16bit 一维, cnt 于 TPLV[cnt*16 +:16]
 ) (
     input  wire             clk,
     input  wire             rst_n,
@@ -19,12 +19,10 @@ module vtmpl #(
     localparam LOGD = $clog2(DIM + 1);
     localparam [LOGD-1:0] DM1 = DIM - 1;
 
-    reg signed [15:0] tpl[0:DIM-1];
-    initial $readmemh(TPL, tpl);
-
     reg [LOGD-1:0] cnt;
     reg signed [39:0] acc;
     reg signed [39:0] d;
+    wire signed [15:0] t_cur = $signed(TPLV[cnt*16 +: 16]);
 
     always @(posedge clk) begin : proc
         if (!rst_n) begin
@@ -37,7 +35,7 @@ module vtmpl #(
         end else begin
             out_valid <= 1'b0;
             if (in_valid) begin
-                d = $signed(in_v) - $signed(tpl[cnt]);
+                d = $signed(in_v) - t_cur;
                 if (d < 0) d = -d;
                 acc = acc + d;
                 if (cnt == DM1) begin

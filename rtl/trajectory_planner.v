@@ -19,12 +19,14 @@ module trajectory_planner #(
     input  wire [9:0] pos0,          // en 上升沿时的实际位置（起点）
     output reg  [9:0] ref_pos        // 参考位置(整数度)，喂给 PID
 );
-    localparam STEP = (VEL_DEG_S * 256) / 1000;   // 每 tick 可移动量(deg<<8)
+    localparam signed [63:0] STEP = (VEL_DEG_S * 256) / 1000; // 每 tick 移动量(deg<<8), 有符号防下溢
     localparam [31:0] GOALQ = POS_MAX << 8;
 
     reg signed [17:0] traj;          // deg<<8
     reg en_d1;
     wire en_rise = en && !en_d1;
+    // 目标缩放为有符号 64bit：goal=0 时 goal_q-STEP 不再无符号下溢(0-64 回绕成 0xFFFFFFC0)
+    wire signed [63:0] goal_q = $signed({54'd0, goal}) << 8;
 
     always @(posedge clk) begin
         en_d1 <= en;
@@ -36,9 +38,9 @@ module trajectory_planner #(
             traj <= {8'd0, pos0} << 8;
             ref_pos <= pos0;
         end else if (en && tick_ctrl) begin
-            if (traj < ({8'd0, goal} << 8) - STEP)      traj <= traj + STEP;
-            else if (traj > ({8'd0, goal} << 8) + STEP) traj <= traj - STEP;
-            else                                        traj <= {8'd0, goal} << 8;
+            if (traj < (goal_q - STEP))      traj <= traj + STEP;
+            else if (traj > (goal_q + STEP)) traj <= traj - STEP;
+            else                             traj <= goal_q;
             // 输出取整并限幅
             if (traj >= GOALQ)          ref_pos <= POS_MAX;
             else if (traj < 0)          ref_pos <= 10'd0;

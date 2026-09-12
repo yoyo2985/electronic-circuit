@@ -66,8 +66,9 @@ module top_voice_system #(
         .fe_feature_valid(fe_valid_sel), .fe_index(fe_index), .fe_feature_data(fe_data_sel),
         .frame_valid(sv_frame), .frame_dist(), .frame_match(sv_owner),
         .owner_valid());
-    utter_vote #(.VOTE_N(VOTE_N), .MIN_MATCH(VOTE_N/2 + 1)) u_uv (
+    utter_vote #(.MIN_MATCH(5)) u_uv (   // 段级累计; 本遗留顶无 VAD, 投票实际被 TEST 注入绕过
         .clk(sys_clk), .rst_n(rst_n),
+        .vad(1'b0),
         .frame_valid(sv_frame), .frame_match(sv_owner),
         .decision_valid(uv_dec), .owner_valid(uv_owner), .frames_seen());
     wire owner_sel = TEST ? dbg_owner : uv_owner;
@@ -75,12 +76,7 @@ module top_voice_system #(
     // ---- What: cmd_matcher + cmd_vote ----
     wire cmd_v, cmd_dec;
     wire [1:0] cmd_id_w;
-    cmd_matcher #(
-        .TPL0("../../data/commands/cmd_stop.mem"),
-        .TPL1("../../data/commands/cmd_left.mem"),
-        .TPL2("../../data/commands/cmd_right.mem"),
-        .TPL3("../../data/commands/cmd_forward.mem"))
-    u_cmd (
+    cmd_matcher u_cmd (
         .clk(sys_clk), .rst_n(rst_n), .mfcc_valid(fe_valid_sel), .mfcc_data(fe_data_sel),
         .cmd_valid(cmd_v), .cmd_id(cmd_id_w), .cmd_dist_min());
     cmd_vote #(.VOTE_N(VOTE_N), .NUM(4)) u_cv (

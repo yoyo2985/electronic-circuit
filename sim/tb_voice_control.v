@@ -25,12 +25,7 @@ module tb_voice_control;
     wire m_valid;
     wire signed [7:0] mvl, mvr;
 
-    cmd_matcher #(
-        .TPL0("../../data/commands/cmd_stop.mem"),
-        .TPL1("../../data/commands/cmd_left.mem"),
-        .TPL2("../../data/commands/cmd_right.mem"),
-        .TPL3("../../data/commands/cmd_forward.mem"))
-    u_cmd (.clk(clk), .rst_n(rst_n), .mfcc_valid(in_valid), .mfcc_data(in_v),
+    cmd_matcher u_cmd (.clk(clk), .rst_n(rst_n), .mfcc_valid(in_valid), .mfcc_data(in_v),
            .cmd_valid(cmdv), .cmd_id(cmdid), .cmd_dist_min());
     cmd_vote #(.VOTE_N(8), .NUM(4)) u_cv (
         .clk(clk), .rst_n(rst_n), .cmd_valid(cmdv), .cmd_id(cmdid),
