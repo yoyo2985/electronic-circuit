@@ -168,6 +168,12 @@
   \end{tabular}
   }
 
+  \vspace{0.7cm}
+
+  {\zihao{-4}\songti
+  本项目已开源，可在 \url{https://github.com/yoyo2985/electronic-circuit}
+  查看完整工程源码（RTL/仿真/约束/工具脚本/数字孪生）。\par}
+
   \vfill
 \end{titlepage}
 
@@ -189,6 +195,8 @@
 为提高硬件算法实现的可靠性，本设计采用Python Golden 参考模型、定点 RTL、ModelSim 仿真、FPGA 板级验证的逐级验证方法。MFCC 特征提取链路已经完成 Python 与 RTL 的逐位一致性验证，多个测试场景下输出 diff=0；声纹认证、命令识别以及 Who及What 联合决策均完成 RTL 仿真验证。与此同时，PC 端建立了声纹离线评估工具链和 Web 数字孪生系统。
 
 实验结果表明，本系统已经完成从真实语音输入到机器人运动的功能。但是，受 13 维 MFCC 特征表达能力的限制，stop/left/right 等命令词之间的判别精度仍然有限（左、右存在混淆），声纹认证依赖段级均值决策，且模板只在“采集时的声学条件”下有效，跨会话存在声学失配问题。因此本系统定位为面向闭环验证的轻量级原型平台，上述局限正是后续改进的方向。
+
+此外，本课程设计的全部工程源码（RTL 设计、仿真测试平台、引脚约束、设计文档、工具脚本与 Web 数字孪生）已开源发布至 GitHub 仓库 \url{https://github.com/yoyo2985/electronic-circuit}，评审老师可在此查看本报告的完整配套工程。
 
 \par\medskip
 \noindent{\heiti 关键词：}
@@ -1149,8 +1157,6 @@ ES8388 调试初期，I2C 配置无法正常生效。
 \refx{MDN. Web Serial API 开发文档[Z/OL].}
 
 \refx{Anlogic TangDynasty 综合布局布线工具与 Mentor ModelSim 仿真用户手册[Z/OL].}
-
-\refx{yoyo2985. 基于 FPGA 的虚拟机器人实时感知、决策与闭环运动控制系统——项目设计文档与 Verilog 源码仓库[G/OL]. \url{https://github.com/yoyo2985/electronic-circuit}}
 %======================================================================
 % 七、设计过程中AI应用实例
 %======================================================================
