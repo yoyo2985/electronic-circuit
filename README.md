@@ -6,6 +6,8 @@
 
 Verilog HDL / TangDynasty(TD) / ModelSim / Python(PyAV+NumPy, 仅 Golden/工具/离线，不作实时替代)。
 
+📦 GitHub 仓库：[`yoyo2985/electronic-circuit`](https://github.com/yoyo2985/electronic-circuit)（课程报告 `report.tex`/`report.pdf` 同步维护于此）
+
 ## 系统架构（四层）
 
 ```text
@@ -205,7 +207,7 @@ ES8388 → I2S(PCM 24bit L/R) → VAD → feature_engine(13-D MFCC)
 - **单帧 vs 片段平均（鲁棒性根因）**：离线建模板用的是语音片段平均特征（属主片段平均距离 ~1500 内），而在线实时是段均值/单帧特征，受发音阶段、音量、停顿影响波动更大（实时单帧可到 3000+）→ 固定阈值会误拒。因此改段级决策（`seg_decide`）缓解，而非硬拍单帧阈值。
 - **声纹闸只区分“属主 / 陌生人”，不区分“关键词 / 非关键词”**：属主说其它命令词到 owner 模板距离 <2500 也会过闸；后者是唤醒词/命令引擎的职责。
 - **定位说明**：语音模块当前是**轻量级 MFCC+L1 模板匹配原型**，目标是验证 FPGA 端实时闭环架构的可行性，而非工业级语音识别。鲁棒性提升见下节“优化方向”。
-- 原始语音 `sounds/` 与派生 `data/speaker_features/` 已 gitignore（隐私/体积）。
+- 原始语音 `sounds/` 与派生 `data/speaker_features/` 于最终交付清理时按隐私要求**删除**，`data/replay_pcm/`（回放 PCM）同步删除——报告插图 fig5/6/8/9 已固化入库无法重新生成；依赖这些数据的离线命令（`benchmark_ab.py`、`plot_golden_vs_rtl.py`、`plot_real_waveforms.py`）再跑会因缺数据报错，需重新采集后复现。
 
 ## 优化方向（后续工作）
 
