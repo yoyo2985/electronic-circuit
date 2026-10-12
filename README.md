@@ -1,12 +1,11 @@
 # 基于 FPGA 的虚拟机器人实时感知、决策与闭环运动控制系统（EG4S20）
 
 真实 FPGA 控制器（安路 EG4S20BG256 开发板）+ 虚拟物理对象（虚拟电机/编码器）+ PC 数字孪生的闭环验证平台。核心思想：在资源受限 FPGA 上把**语音感知 → 身份认证 → 指令理解 → 运动决策 → 执行反馈**全链路硬件化，实现“主人语音输入 → FPGA 实时处理 → 身份验证 → 指令解析 → 电机控制 → 数字孪生反馈”的完整闭环。
-
-> 项目定位不是“高精度语音识别算法”，而是**面向具身智能机器人的 FPGA 实时感知-决策-控制闭环验证平台**：验证资源受限 FPGA 上把感知、决策、执行串成闭环的可行性，语音模块采用轻量级原型算法。
+在验证资源受限的 FPGA 上把感知、决策、执行串成闭环的可行性，语音模块采用轻量级原型算法。
 
 Verilog HDL / TangDynasty(TD) / ModelSim / Python(PyAV+NumPy, 仅 Golden/工具/离线，不作实时替代)。
 
-📦 GitHub 仓库：[`yoyo2985/electronic-circuit`](https://github.com/yoyo2985/electronic-circuit)（课程报告 `report.tex`/`report.pdf` 同步维护于此）
+📦 GitHub 仓库：[`yoyo2985/electronic-circuit`](https://github.com/yoyo2985/electronic-circuit)（报告 `report.tex`/`report.pdf` 同步维护于此）
 
 ## 系统架构（四层）
 
